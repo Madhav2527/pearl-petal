@@ -130,16 +130,21 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
       {/* Product Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-[#EBE3D8] p-8">
-          <p className="text-sm text-charcoal/70 font-sans mb-4">
-            No items currently found in this subcategory.
+        <div className="text-center py-20 bg-ivory/60 border border-champagne p-8 sm:p-12 space-y-4 max-w-xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-champagne text-[10px] uppercase tracking-widest text-charcoal font-sans">
+            ✦ DROP 01 IN PREPARATION
+          </div>
+          <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+            {categoryMeta.name} Pieces Dropping Soon
+          </h3>
+          <p className="text-xs text-charcoal/70 font-sans leading-relaxed max-w-md mx-auto">
+            Our atelier is stocking this collection with hand-selected pieces. Explore our other vibes or check back during the next drop.
           </p>
-          <button
-            onClick={() => setSelectedSub("all")}
-            className="btn-boutique-primary"
-          >
-            Show All {categoryMeta.name}
-          </button>
+          <div className="pt-2">
+            <Link href="/shop" className="btn-boutique-primary">
+              View All Boutique Vibes
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">

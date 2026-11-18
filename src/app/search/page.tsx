@@ -113,7 +113,7 @@ export default function SearchPage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : recommended.length > 0 ? (
         /* Default State when no query is typed */
         <div className="space-y-8 pt-6">
           <div className="text-center">
@@ -128,6 +128,10 @@ export default function SearchPage() {
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-12 text-xs font-sans text-taupe">
+          Start typing above to search pieces across the boutique.
         </div>
       )}
 

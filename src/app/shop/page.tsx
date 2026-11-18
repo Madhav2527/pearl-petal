@@ -152,7 +152,27 @@ export default function ShopAllPage() {
       </div>
 
       {/* Products Grid */}
-      {filteredProducts.length === 0 ? (
+      {allProducts.length === 0 ? (
+        <div className="text-center py-20 bg-ivory/60 border border-champagne p-8 sm:p-14 space-y-6 max-w-2xl mx-auto shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-champagne text-[10px] uppercase tracking-widest text-charcoal font-sans">
+            ✦ DROP 01 CURATION IN PROGRESS
+          </div>
+          <h3 className="font-serif text-3xl sm:text-4xl text-charcoal">
+            The Vault is Opening Soon
+          </h3>
+          <p className="text-xs sm:text-sm text-charcoal/70 font-sans leading-relaxed max-w-md mx-auto">
+            We are curating hand-selected freshwater baroque pearls, tarnish-free gold essentials, and French atelier hair pieces. Every item is verified for luxury finish and organic luster.
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/"
+              className="btn-boutique-primary w-full sm:w-auto"
+            >
+              Explore Boutique Vibes
+            </a>
+          </div>
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <div className="text-center py-20 bg-white border border-[#EBE3D8] p-8 space-y-4">
           <SlidersHorizontal className="w-8 h-8 text-taupe mx-auto" />
           <h3 className="font-serif text-2xl text-charcoal">No pieces found</h3>

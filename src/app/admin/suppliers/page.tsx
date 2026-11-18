@@ -77,7 +77,14 @@ export default function AdminSuppliersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EBE3D8]/60 text-charcoal">
-              {suppliers.map((sup) => (
+              {suppliers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-taupe font-sans">
+                    No suppliers added yet. Click &ldquo;+ Add Supplier&rdquo; to register your authorized wholesale partners.
+                  </td>
+                </tr>
+              ) : (
+                suppliers.map((sup) => (
                 <tr key={sup.id} className="hover:bg-[#FAF8F5] transition-colors">
                   <td className="p-4 font-medium text-charcoal font-serif text-sm">
                     {sup.name}
@@ -120,7 +127,8 @@ export default function AdminSuppliersPage() {
                     </a>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

@@ -146,30 +146,36 @@ export default function AdminOverviewPage() {
           </div>
 
           <div className="divide-y divide-[#EBE3D8]/60 overflow-x-auto">
-            {recentOrders.map((ord) => (
-              <div key={ord.id} className="py-3 flex items-center justify-between gap-4 text-xs font-sans">
-                <div>
-                  <span className="font-medium text-charcoal block">#{ord.order_number}</span>
-                  <span className="text-charcoal/60">{ord.customer.name} &bull; {ord.customer.city}</span>
-                </div>
-
-                <div className="text-center">
-                  <span className="inline-block px-2.5 py-0.5 bg-ivory border border-champagne text-[10px] uppercase tracking-wider text-charcoal font-medium">
-                    {ord.status.replace("_", " ")}
-                  </span>
-                  <span className="text-[10px] text-taupe block mt-0.5">
-                    {ord.payment_status === "paid" ? "Paid (Prepaid)" : "Pending"}
-                  </span>
-                </div>
-
-                <div className="text-right">
-                  <span className="font-medium text-charcoal block">₹{ord.total_payable.toLocaleString("en-IN")}</span>
-                  <span className="text-[10px] text-emerald-800">
-                    Profit: +₹{ord.total_contribution}
-                  </span>
-                </div>
+            {recentOrders.length === 0 ? (
+              <div className="py-8 text-center text-taupe text-xs font-sans">
+                No customer orders placed yet. Live orders will appear here automatically when shoppers check out.
               </div>
-            ))}
+            ) : (
+              recentOrders.map((ord) => (
+                <div key={ord.id} className="py-3 flex items-center justify-between gap-4 text-xs font-sans">
+                  <div>
+                    <span className="font-medium text-charcoal block">#{ord.order_number}</span>
+                    <span className="text-charcoal/60">{ord.customer.name} &bull; {ord.customer.city}</span>
+                  </div>
+
+                  <div className="text-center">
+                    <span className="inline-block px-2.5 py-0.5 bg-ivory border border-champagne text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                      {ord.status.replace("_", " ")}
+                    </span>
+                    <span className="text-[10px] text-taupe block mt-0.5">
+                      {ord.payment_status === "paid" ? "Paid (Prepaid)" : "Pending"}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="font-medium text-charcoal block">₹{ord.total_payable.toLocaleString("en-IN")}</span>
+                    <span className="text-[10px] text-emerald-800">
+                      Profit: +₹{ord.total_contribution}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -183,23 +189,32 @@ export default function AdminOverviewPage() {
           </div>
 
           <div className="divide-y divide-[#EBE3D8]/60">
-            {bestsellers.map((item) => (
-              <div key={item.id} className="py-3 flex items-center justify-between gap-3 text-xs font-sans">
-                <div>
-                  <p className="font-serif text-sm text-charcoal line-clamp-1">{item.name}</p>
-                  <p className="text-[10px] text-taupe uppercase tracking-wider">
-                    {item.category} &bull; Stock: {item.stock}
-                  </p>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="font-medium text-charcoal block">₹{item.selling_price}</span>
-                  <span className="text-[10px] text-taupe block">
-                    Cost: ₹{item.supplier_cost}
-                  </span>
-                </div>
+            {bestsellers.length === 0 ? (
+              <div className="py-8 text-center text-taupe text-xs font-sans space-y-2">
+                <p>No products in catalogue yet.</p>
+                <Link href="/admin/products" className="btn-boutique-primary py-1.5 px-3 text-[11px] inline-block">
+                  ⚡ Quick Add by Link
+                </Link>
               </div>
-            ))}
+            ) : (
+              bestsellers.map((item) => (
+                <div key={item.id} className="py-3 flex items-center justify-between gap-3 text-xs font-sans">
+                  <div>
+                    <p className="font-serif text-sm text-charcoal line-clamp-1">{item.name}</p>
+                    <p className="text-[10px] text-taupe uppercase tracking-wider">
+                      {item.category} &bull; Stock: {item.stock}
+                    </p>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="font-medium text-charcoal block">₹{item.selling_price}</span>
+                    <span className="text-[10px] text-taupe block">
+                      Cost: ₹{item.supplier_cost}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

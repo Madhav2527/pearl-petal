@@ -114,7 +114,7 @@ function TrackOrderContent() {
             type="text"
             value={emailOrPhone}
             onChange={(e) => setEmailOrPhone(e.target.value)}
-            placeholder="e.g. ananya.sharma@example.com"
+            placeholder="e.g. customer@example.com or 9876543210"
             className="w-full bg-ivory/30 border border-champagne p-3 text-xs text-charcoal focus:outline-none focus:border-charcoal"
           />
         </div>
