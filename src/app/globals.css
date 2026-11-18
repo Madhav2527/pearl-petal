@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ivory: #F1EAE0;
+    --color-champagne: #D8C5AB;
+    --color-taupe: #A18A70;
+    --color-charcoal: #39342F;
+    --color-cream: #FAF8F5;
+  }
+
+  body {
+    @apply bg-cream text-charcoal font-sans antialiased selection:bg-champagne selection:text-charcoal;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight text-charcoal;
+  }
+}
+
+/* Custom luxury button styling */
+.btn-boutique-primary {
+  @apply inline-flex items-center justify-center px-6 py-3.5 bg-charcoal text-white font-sans text-xs uppercase tracking-widest transition-all duration-300 hover:bg-taupe-dark hover:shadow-sm active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-boutique-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3.5 border border-champagne bg-transparent text-charcoal font-sans text-xs uppercase tracking-widest transition-all duration-300 hover:bg-ivory hover:border-taupe active:scale-[0.99] disabled:opacity-50;
+}
+
+.btn-boutique-champagne {
+  @apply inline-flex items-center justify-center px-6 py-3.5 bg-champagne text-charcoal font-sans text-xs uppercase tracking-widest font-medium transition-all duration-300 hover:bg-champagne-dark active:scale-[0.99];
+}
+
+/* Delicate card borders */
+.boutique-card {
+  @apply bg-white border border-[#EBE3D8] transition-all duration-300 hover:border-champagne hover:shadow-[0_8px_30px_rgb(216,197,171,0.12)];
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF8F5;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8C5AB;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A18A70;
+}
