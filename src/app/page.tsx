@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Gem, Gift, Heart, Shield } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import { getPublicProducts } from "@/lib/public-catalog";
+import { getPublicProducts } from "@/lib/store";
 import { CATEGORIES_DATA } from "@/data/seed-data";
 
 export default function HomePage() {

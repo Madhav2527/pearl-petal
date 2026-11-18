@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
@@ -16,7 +16,19 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     notFound();
   }
 
-  const allProducts = useMemo(() => getPublicProducts({ category: slug }), [slug]);
+  const [allProducts, setAllProducts] = useState(() => getPublicProducts({ category: slug }));
+
+  useEffect(() => {
+    fetch(`/api/products?category=${encodeURIComponent(slug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+          setAllProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, [slug]);
+
   const [selectedSub, setSelectedSub] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("featured");
 

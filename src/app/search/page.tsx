@@ -1,12 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search as SearchIcon, X, Sparkles } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { getPublicProducts } from "@/lib/public-catalog";
 
 export default function SearchPage() {
-  const allProducts = useMemo(() => getPublicProducts(), []);
+  const [allProducts, setAllProducts] = useState(getPublicProducts());
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+          setAllProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {

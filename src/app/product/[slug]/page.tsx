@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { getPublicProductBySlug, getPublicProducts } from "@/lib/public-catalog";
+import { PublicProduct } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import ProductCard from "@/components/ProductCard";
 import {
@@ -23,17 +24,44 @@ import {
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
-  const product = getPublicProductBySlug(slug);
+  const initialProduct = getPublicProductBySlug(slug);
+  const [product, setProduct] = useState<PublicProduct | null>(initialProduct);
+  const [loading, setLoading] = useState(!initialProduct);
+
+  const { addItem } = useCart();
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState(initialProduct?.variants[0] || null);
+  const [quantity, setQuantity] = useState(1);
+  const [addedAnimation, setAddedAnimation] = useState(false);
+
+  useEffect(() => {
+    if (!product) {
+      fetch(`/api/products/${encodeURIComponent(slug)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.product) {
+            setProduct(data.product);
+            if (data.product.variants?.[0]) {
+              setSelectedVariant(data.product.variants[0]);
+            }
+          }
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [slug, product]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-28 text-center space-y-3 font-sans">
+        <p className="font-serif text-2xl text-charcoal">Loading boutique piece...</p>
+        <p className="text-xs text-taupe">Retrieving piece details from the collection</p>
+      </div>
+    );
+  }
 
   if (!product) {
     notFound();
   }
-
-  const { addItem } = useCart();
-  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(product.variants[0] || null);
-  const [quantity, setQuantity] = useState(1);
-  const [addedAnimation, setAddedAnimation] = useState(false);
 
   const images = product.images.length > 0
     ? product.images

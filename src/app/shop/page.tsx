@@ -1,12 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import { getPublicProducts } from "@/lib/public-catalog";
 import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
 export default function ShopAllPage() {
-  const allProducts = useMemo(() => getPublicProducts(), []);
+  const [allProducts, setAllProducts] = useState(getPublicProducts());
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+          setAllProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
   
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");

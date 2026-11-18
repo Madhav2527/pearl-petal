@@ -2,8 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Product, ProductCategory, ProductSubcategory } from "@/lib/types";
-import { Plus, Edit2, Trash2, Eye, EyeOff, Sparkles, Check, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Eye,
+  EyeOff,
+  Sparkles,
+  AlertCircle,
+  Link as LinkIcon,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  ArrowRight,
+  RefreshCw,
+} from "lucide-react";
 import { calculateSellingPrice } from "@/lib/pricing-engine";
 
 export default function AdminProductsPage() {
@@ -12,7 +27,28 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Form state
+  // Link Importer State
+  const [linkUrl, setLinkUrl] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
+  const [quickCost, setQuickCost] = useState<number>(250);
+  const [quickPrice, setQuickPrice] = useState<number>(350); // Auto +₹100
+  const [extractedData, setExtractedData] = useState<{
+    name: string;
+    description: string;
+    image_url: string;
+    category: ProductCategory;
+    subcategory: ProductSubcategory;
+    isExtracted: boolean;
+  } | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishedItem, setPublishedItem] = useState<{
+    name: string;
+    slug: string;
+    price: number;
+  } | null>(null);
+
+  // Manual Form State
   const [formData, setFormData] = useState({
     name: "",
     category: "jewellery" as ProductCategory,
@@ -49,6 +85,114 @@ export default function AdminProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Update quick price automatically when supplier cost changes (+₹100 rule)
+  const handleCostChange = (newCost: number) => {
+    setQuickCost(newCost);
+    setQuickPrice(newCost + 100);
+  };
+
+  // Handle URL Link Extraction
+  const handleExtractLink = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!linkUrl.trim()) {
+      setExtractError("Please paste a valid product link or URL.");
+      return;
+    }
+
+    setExtracting(true);
+    setExtractError("");
+    setPublishedItem(null);
+
+    try {
+      const res = await fetch("/api/admin/extract-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: linkUrl.trim() }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setExtractedData({
+          name: json.data.name,
+          description: json.data.description,
+          image_url: json.data.image_url,
+          category: json.data.category,
+          subcategory: json.data.subcategory,
+          isExtracted: json.isExtracted,
+        });
+      } else {
+        setExtractError(json.error || "Could not read link. You can still enter details manually.");
+      }
+    } catch {
+      setExtractError("Network error while inspecting link.");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  // Publish extracted product immediately live to storefront
+  const handlePublishFromLink = async () => {
+    if (!extractedData) return;
+    if (!extractedData.name.trim()) {
+      setExtractError("Product name cannot be empty.");
+      return;
+    }
+
+    setPublishing(true);
+    setExtractError("");
+
+    try {
+      const customMarkup = quickPrice - quickCost;
+      const payload = {
+        name: extractedData.name.trim(),
+        category: extractedData.category,
+        subcategory: extractedData.subcategory,
+        description: extractedData.description,
+        supplier_cost: Number(quickCost),
+        custom_markup: customMarkup !== 100 ? customMarkup : null,
+        stock: 25,
+        is_featured: true,
+        is_bestseller: false,
+        is_new: true,
+        is_visible: true,
+        tags: [extractedData.category, extractedData.subcategory, "new arrival", "link imported"],
+        images: [
+          {
+            id: `img-${Date.now()}`,
+            image_url: extractedData.image_url,
+            alt_text: extractedData.name,
+            display_order: 1,
+            is_primary: true,
+          },
+        ],
+      };
+
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.product) {
+        setPublishedItem({
+          name: data.product.name,
+          slug: data.product.slug,
+          price: data.product.selling_price,
+        });
+        setExtractedData(null);
+        setLinkUrl("");
+        loadProducts();
+      } else {
+        setExtractError(data.error || "Failed to publish product.");
+      }
+    } catch {
+      setExtractError("Network error while publishing product.");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -159,13 +303,13 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       
-      {/* Top action bar */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EBE3D8] pb-4">
         <div>
           <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block">
-            Inventory &amp; Pricing
+            Inventory &amp; Pricing Automation
           </span>
           <h1 className="font-serif text-3xl text-charcoal">
             Product Catalogue ({products.length})
@@ -175,15 +319,358 @@ export default function AdminProductsPage() {
         <button
           type="button"
           onClick={openAddModal}
-          className="btn-boutique-primary py-3 px-5 flex items-center gap-2"
+          className="btn-boutique-secondary py-2.5 px-4 flex items-center gap-2 text-xs"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Product</span>
+          <span>Manual Add</span>
         </button>
       </div>
 
-      {/* Products Table */}
+      {/* ========================================================================= */}
+      {/* ⚡ FEATURE: QUICK ADD BY PRODUCT LINK (AUTO +₹100 & INSTANT PUBLISH)       */}
+      {/* ========================================================================= */}
+      <div className="bg-gradient-to-br from-white via-ivory/30 to-[#FAF6F0] border-2 border-champagne p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-champagne/60 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-champagne/40 flex items-center justify-center text-taupe-dark">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-serif text-2xl text-charcoal">
+                Quick Add by Product Link
+              </h2>
+              <p className="text-xs text-charcoal/70 font-sans">
+                Paste any external product link, set your supplier cost, and publish live to the storefront in one click.
+              </p>
+            </div>
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium font-sans">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Dynamic +₹100 Markup Engine Active
+          </span>
+        </div>
+
+        {/* Success Alert when product is published */}
+        {publishedItem && (
+          <div className="bg-emerald-50 border border-emerald-300 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-sans text-emerald-900 animate-fadeIn">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-emerald-950">
+                  ✨ &quot;{publishedItem.name}&quot; is now LIVE on your website!
+                </p>
+                <p className="text-[11px] text-emerald-800">
+                  Published at <strong>₹{publishedItem.price}</strong> across Homepage, Shop, Category, and Search.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href={`/product/${publishedItem.slug}`}
+              target="_blank"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-800 text-white hover:bg-emerald-900 transition-colors text-xs font-medium shrink-0"
+            >
+              <span>View Live Product</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {extractError && (
+          <div className="bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800 flex items-center gap-2 font-sans">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{extractError}</span>
+          </div>
+        )}
+
+        {/* Link Input Row */}
+        <form onSubmit={handleExtractLink} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <div className="md:col-span-8 space-y-1">
+              <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold font-sans">
+                Product Link / URL *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-taupe">
+                  <LinkIcon className="w-4 h-4" />
+                </div>
+                <input
+                  type="url"
+                  required
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="Paste link (e.g. https://supplier-store.com/products/pearl-earrings)..."
+                  className="w-full bg-white border border-champagne pl-9 pr-3 py-3 text-xs text-charcoal placeholder:text-taupe focus:outline-none focus:border-charcoal font-sans"
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-4">
+              <button
+                type="submit"
+                disabled={extracting || !linkUrl.trim()}
+                className="btn-boutique-primary w-full py-3 px-4 flex items-center justify-center gap-2 text-xs font-sans disabled:opacity-50"
+              >
+                {extracting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Inspecting Link...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Inspect Link &amp; Autofill</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {/* Interactive Editor Card after link inspection */}
+        {extractedData && (
+          <div className="bg-white border border-champagne p-5 sm:p-6 space-y-6 shadow-sm font-sans animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-[#EBE3D8] pb-3">
+              <span className="text-xs uppercase tracking-wider font-semibold text-charcoal flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                {extractedData.isExtracted
+                  ? "Product Information Extracted"
+                  : "Link Detected — Review & Set Price"}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setExtractedData(null)}
+                className="text-xs text-taupe hover:text-charcoal uppercase"
+              >
+                Discard
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+              
+              {/* Left Column: Image Preview & URL */}
+              <div className="md:col-span-4 space-y-3">
+                <div className="relative aspect-[3/4] bg-ivory border border-[#EBE3D8] overflow-hidden group">
+                  {extractedData.image_url ? (
+                    <Image
+                      src={extractedData.image_url}
+                      alt={extractedData.name || "Preview"}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-taupe text-xs">
+                      No Image URL
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                    Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={extractedData.image_url}
+                    onChange={(e) =>
+                      setExtractedData({ ...extractedData, image_url: e.target.value })
+                    }
+                    className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Title, Category, Pricing Rule & Publish */}
+              <div className="md:col-span-8 space-y-4">
+                
+                {/* Title */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold">
+                    Product Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={extractedData.name}
+                    onChange={(e) =>
+                      setExtractedData({ ...extractedData, name: e.target.value })
+                    }
+                    className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal font-serif text-base focus:outline-none focus:border-charcoal"
+                  />
+                </div>
+
+                {/* Category & Subcategory */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                      Category
+                    </label>
+                    <select
+                      value={extractedData.category}
+                      onChange={(e) =>
+                        setExtractedData({
+                          ...extractedData,
+                          category: e.target.value as ProductCategory,
+                        })
+                      }
+                      className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
+                    >
+                      <option value="jewellery">Jewellery</option>
+                      <option value="hair-accessories">Hair Accessories</option>
+                      <option value="everyday-essentials">Everyday Essentials</option>
+                      <option value="gifts">Gifts</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                      Subcategory
+                    </label>
+                    <select
+                      value={extractedData.subcategory}
+                      onChange={(e) =>
+                        setExtractedData({
+                          ...extractedData,
+                          subcategory: e.target.value as ProductSubcategory,
+                        })
+                      }
+                      className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
+                    >
+                      <option value="earrings">Earrings</option>
+                      <option value="necklaces">Necklaces</option>
+                      <option value="bracelets">Bracelets</option>
+                      <option value="rings">Rings</option>
+                      <option value="claw-clips">Claw Clips</option>
+                      <option value="scrunchies">Scrunchies</option>
+                      <option value="hair-bows">Hair Bows</option>
+                      <option value="phone-charms">Phone Charms</option>
+                      <option value="pouches">Pouches</option>
+                      <option value="gift-sets">Gift Sets</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dynamic Pricing Engine Calculation Card */}
+                <div className="bg-[#FAF7F2] border border-champagne p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-charcoal flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-taupe-dark" />
+                      Dynamic Pricing Engine: Selling Price = Cost + ₹100
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-mono font-medium">
+                      Margin: ₹{quickPrice - quickCost}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                        Supplier Cost (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quickCost}
+                        onChange={(e) => handleCostChange(Number(e.target.value) || 0)}
+                        className="w-full bg-white border border-champagne p-2.5 text-xs text-charcoal font-mono focus:outline-none focus:border-charcoal"
+                      />
+                      <span className="text-[9px] text-taupe block">
+                        Confidential &bull; Scrubbed from public views
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                        Selling Price (₹) &bull; Live On Site
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quickPrice}
+                        onChange={(e) => setQuickPrice(Number(e.target.value) || 0)}
+                        className="w-full bg-white border border-champagne p-2.5 text-sm font-semibold font-mono text-emerald-800 focus:outline-none focus:border-charcoal"
+                      />
+                      <span className="text-[9px] text-emerald-700 block">
+                        Default: Cost (₹{quickCost}) + ₹100 = ₹{quickCost + 100}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1">
+                  <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
+                    Product Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={extractedData.description}
+                    onChange={(e) =>
+                      setExtractedData({ ...extractedData, description: e.target.value })
+                    }
+                    className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal leading-relaxed"
+                  />
+                </div>
+
+                {/* Action Button: Publish Live */}
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExtractedData(null)}
+                    className="btn-boutique-secondary py-3 px-5 text-xs"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={publishing}
+                    onClick={handlePublishFromLink}
+                    className="btn-boutique-primary py-3 px-6 text-xs flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50"
+                  >
+                    {publishing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Publishing to Website...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Publish Live to Website Now &rarr;</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* EXISTING PRODUCT CATALOGUE TABLE                                          */}
+      {/* ========================================================================= */}
       <div className="bg-white border border-[#EBE3D8] shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-[#EBE3D8] flex items-center justify-between">
+          <h3 className="font-serif text-lg text-charcoal">
+            All Storefront Products ({products.length})
+          </h3>
+          <button
+            type="button"
+            onClick={loadProducts}
+            className="text-xs text-taupe hover:text-charcoal flex items-center gap-1 font-sans"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Refresh</span>
+          </button>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-sans">
             <thead className="bg-ivory/60 border-b border-[#EBE3D8] text-taupe-dark uppercase tracking-wider font-semibold">
@@ -207,7 +694,7 @@ export default function AdminProductsPage() {
               ) : products.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-taupe">
-                    No products found. Add your first piece above.
+                    No products found. Add your first piece using the link importer above.
                   </td>
                 </tr>
               ) : (
@@ -228,10 +715,15 @@ export default function AdminProductsPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-serif text-sm text-charcoal font-medium line-clamp-1">
-                            {p.name}
-                          </p>
-                          <span className="text-[10px] text-taupe font-mono">
+                          <Link
+                            href={`/product/${p.slug}`}
+                            target="_blank"
+                            className="font-serif text-sm text-charcoal font-medium hover:text-taupe-dark line-clamp-1 inline-flex items-center gap-1 group"
+                          >
+                            <span>{p.name}</span>
+                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-taupe" />
+                          </Link>
+                          <span className="text-[10px] text-taupe font-mono block">
                             SKU: {p.sku}
                           </span>
                         </div>
@@ -315,7 +807,9 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* ADD / EDIT PRODUCT MODAL */}
+      {/* ========================================================================= */}
+      {/* MANUAL ADD / EDIT MODAL                                                   */}
+      {/* ========================================================================= */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-charcoal/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white border border-[#EBE3D8] w-full max-w-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
@@ -453,28 +947,13 @@ export default function AdminProductsPage() {
 
                 <div className="space-y-1">
                   <label className="block text-charcoal font-medium uppercase tracking-wider">
-                    Primary Image URL *
+                    Image URL *
                   </label>
                   <input
                     type="url"
                     required
                     value={formData.image_url}
                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal"
-                  />
-                </div>
-
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="block text-charcoal font-medium uppercase tracking-wider">
-                    Boutique Description *
-                  </label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe materials, freshwater pearls, silk finish, and styling notes..."
                     className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal"
                   />
                 </div>
@@ -487,23 +966,24 @@ export default function AdminProductsPage() {
                     type="text"
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    placeholder="pearl, choker, gold, bridal"
                     className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal"
                   />
                 </div>
 
-                {/* Toggles */}
-                <div className="sm:col-span-2 flex flex-wrap gap-6 pt-2 border-t border-[#EBE3D8]">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_visible}
-                      onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
-                      className="accent-charcoal"
-                    />
-                    <span>Publish &amp; Visible to Customers</span>
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="block text-charcoal font-medium uppercase tracking-wider">
+                    Description *
                   </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal leading-relaxed"
+                  />
+                </div>
 
+                <div className="sm:col-span-2 flex flex-wrap gap-6 pt-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -511,7 +991,7 @@ export default function AdminProductsPage() {
                       onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
                       className="accent-charcoal"
                     />
-                    <span>Featured on Homepage</span>
+                    <span>Featured Piece</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -521,13 +1001,33 @@ export default function AdminProductsPage() {
                       onChange={(e) => setFormData({ ...formData, is_bestseller: e.target.checked })}
                       className="accent-charcoal"
                     />
-                    <span>Bestseller Badge</span>
+                    <span>Bestseller</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_new}
+                      onChange={(e) => setFormData({ ...formData, is_new: e.target.checked })}
+                      className="accent-charcoal"
+                    />
+                    <span>New Arrival</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_visible}
+                      onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
+                      className="accent-charcoal"
+                    />
+                    <span>Visible in Store</span>
                   </label>
                 </div>
 
               </div>
 
-              <div className="pt-4 border-t border-[#EBE3D8] flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EBE3D8]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
@@ -540,8 +1040,7 @@ export default function AdminProductsPage() {
                   disabled={saving}
                   className="btn-boutique-primary py-2.5 px-6 text-xs flex items-center gap-2"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{saving ? "Saving..." : "Save Product"}</span>
+                  {saving ? "Saving Piece..." : editingProduct ? "Update Piece" : "Add to Boutique"}
                 </button>
               </div>
 
