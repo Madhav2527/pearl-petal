@@ -28,6 +28,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
+            unoptimized
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.srcset = "";
+              target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+            }}
             className={`object-cover object-center transition-all duration-700 group-hover:scale-105 ${
               secondaryImage ? "group-hover:opacity-0" : ""
             }`}
@@ -40,6 +47,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             alt={secondaryImage.alt_text || product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized
+            referrerPolicy="no-referrer"
             className="object-cover object-center absolute inset-0 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105"
           />
         )}

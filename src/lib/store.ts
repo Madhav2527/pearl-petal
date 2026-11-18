@@ -214,6 +214,8 @@ export function saveProductAdmin(productData: Partial<Product> & { name: string;
     is_new: productData.is_new !== undefined ? productData.is_new : true,
     is_visible: productData.is_visible !== undefined ? productData.is_visible : true,
     tags: productData.tags || [],
+    product_link: productData.product_link || productData.source_url,
+    source_url: productData.source_url || productData.product_link,
     images: productData.images || [
       {
         id: `img-${Date.now()}`,

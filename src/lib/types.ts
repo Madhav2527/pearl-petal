@@ -56,6 +56,8 @@ export interface Product {
   images: ProductImage[];
   variants: ProductVariant[];
   tags: string[];
+  product_link?: string;
+  source_url?: string;
   created_at: string;
   updated_at: string;
 }

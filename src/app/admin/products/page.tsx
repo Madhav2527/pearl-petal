@@ -29,6 +29,7 @@ export default function AdminProductsPage() {
 
   // Link Importer State
   const [linkUrl, setLinkUrl] = useState("");
+  const [directImageUrl, setDirectImageUrl] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState("");
   const [quickCost, setQuickCost] = useState<number>(250);
@@ -108,7 +109,10 @@ export default function AdminProductsPage() {
       const res = await fetch("/api/admin/extract-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: linkUrl.trim() }),
+        body: JSON.stringify({
+          url: linkUrl.trim(),
+          directImageUrl: directImageUrl.trim() || undefined,
+        }),
       });
 
       const json = await res.json();
@@ -156,6 +160,8 @@ export default function AdminProductsPage() {
         is_bestseller: false,
         is_new: true,
         is_visible: true,
+        product_link: linkUrl.trim() || undefined,
+        source_url: linkUrl.trim() || undefined,
         tags: [extractedData.category, extractedData.subcategory, "new arrival", "link imported"],
         images: [
           {
@@ -183,6 +189,7 @@ export default function AdminProductsPage() {
         });
         setExtractedData(null);
         setLinkUrl("");
+        setDirectImageUrl("");
         loadProducts();
       } else {
         setExtractError(data.error || "Failed to publish product.");
@@ -388,7 +395,7 @@ export default function AdminProductsPage() {
         {/* Link Input Row */}
         <form onSubmit={handleExtractLink} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div className="md:col-span-8 space-y-1">
+            <div className="md:col-span-6 space-y-1">
               <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold font-sans">
                 Product Link / URL *
               </label>
@@ -401,27 +408,40 @@ export default function AdminProductsPage() {
                   required
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="Paste link (e.g. https://supplier-store.com/products/pearl-earrings)..."
+                  placeholder="Paste link (e.g. Nykaa, Myntra, Amazon, supplier URL)..."
                   className="w-full bg-white border border-champagne pl-9 pr-3 py-3 text-xs text-charcoal placeholder:text-taupe focus:outline-none focus:border-charcoal font-sans"
                 />
               </div>
             </div>
 
-            <div className="md:col-span-4">
+            <div className="md:col-span-4 space-y-1">
+              <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold font-sans">
+                Product Image Link (Optional)
+              </label>
+              <input
+                type="url"
+                value={directImageUrl}
+                onChange={(e) => setDirectImageUrl(e.target.value)}
+                placeholder="Paste direct image link if you copied it..."
+                className="w-full bg-white border border-champagne px-3 py-3 text-xs text-charcoal placeholder:text-taupe focus:outline-none focus:border-charcoal font-sans"
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <button
                 type="submit"
                 disabled={extracting || !linkUrl.trim()}
-                className="btn-boutique-primary w-full py-3 px-4 flex items-center justify-center gap-2 text-xs font-sans disabled:opacity-50"
+                className="btn-boutique-primary w-full py-3 px-3 flex items-center justify-center gap-1.5 text-xs font-sans disabled:opacity-50"
               >
                 {extracting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Inspecting Link...</span>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Reading...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Inspect Link &amp; Autofill</span>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Add by Link</span>
                   </>
                 )}
               </button>
@@ -436,7 +456,7 @@ export default function AdminProductsPage() {
               <span className="text-xs uppercase tracking-wider font-semibold text-charcoal flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 {extractedData.isExtracted
-                  ? "Product Information Extracted"
+                  ? "Product Information & Image Ready"
                   : "Link Detected — Review & Set Price"}
               </span>
 
@@ -459,6 +479,8 @@ export default function AdminProductsPage() {
                       src={extractedData.image_url}
                       alt={extractedData.name || "Preview"}
                       fill
+                      unoptimized
+                      referrerPolicy="no-referrer"
                       className="object-cover"
                     />
                   ) : (
@@ -470,7 +492,7 @@ export default function AdminProductsPage() {
 
                 <div className="space-y-1">
                   <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
-                    Image URL
+                    Product Image URL
                   </label>
                   <input
                     type="url"
@@ -481,6 +503,43 @@ export default function AdminProductsPage() {
                     className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal"
                     placeholder="https://..."
                   />
+                </div>
+
+                {/* Quick Studio Photo Presets */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] uppercase tracking-wider text-taupe font-sans font-medium block">
+                    Or Pick Studio Aesthetic Photo:
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px] font-sans">
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Baroque Drops
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Pearl Choker
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Claw Clip
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Velvet Bow
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -710,6 +769,8 @@ export default function AdminProductsPage() {
                               src={p.images[0].image_url}
                               alt={p.name}
                               fill
+                              unoptimized
+                              referrerPolicy="no-referrer"
                               className="object-cover"
                             />
                           )}
@@ -726,6 +787,17 @@ export default function AdminProductsPage() {
                           <span className="text-[10px] text-taupe font-mono block">
                             SKU: {p.sku}
                           </span>
+                          {(p.product_link || p.source_url) && (
+                            <a
+                              href={p.product_link || p.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-taupe hover:text-charcoal underline inline-flex items-center gap-0.5 mt-0.5 font-sans"
+                            >
+                              <span>Source Link</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
                         </div>
                       </div>
                     </td>

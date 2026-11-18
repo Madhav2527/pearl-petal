@@ -19,6 +19,7 @@ import {
   Sparkles,
   Heart,
   Share2,
+  ExternalLink,
 } from "lucide-react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -124,6 +125,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     src={img.image_url}
                     alt={img.alt_text || product.name}
                     fill
+                    unoptimized
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.srcset = "";
+                      target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                    }}
                     className="object-cover object-center"
                   />
                 </button>
@@ -139,6 +147,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 alt={images[selectedImageIdx].alt_text || product.name}
                 fill
                 priority
+                unoptimized
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.srcset = "";
+                  target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                }}
                 className="object-cover object-center transition-all duration-500"
               />
             )}
@@ -165,9 +180,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           
           {/* Header & Price */}
           <div className="space-y-2 border-b border-[#EBE3D8] pb-6">
-            <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block">
-              {product.subcategory.replace("-", " ")} &bull; SKU: {selectedVariant?.sku || product.sku}
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block">
+                {product.subcategory.replace("-", " ")} &bull; SKU: {selectedVariant?.sku || product.sku}
+              </span>
+              {(product.product_link || product.source_url) && (
+                <a
+                  href={product.product_link || product.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-sans text-taupe hover:text-charcoal transition-colors underline"
+                  title="View original product source"
+                >
+                  <span>Source Reference</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
             <h1 className="font-serif text-3xl sm:text-4xl text-charcoal leading-snug">
               {product.name}
             </h1>

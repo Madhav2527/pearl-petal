@@ -1,8 +1,235 @@
 // ==============================================================================
 // PETAL & PEARL — PRODUCTION-READY FULL REPOSITORY CODEBASE
 // Domain: https://thepearlpetals.in
-// Generated at: 2026-11-18T14:47:56.624Z
+// Generated at: 2026-11-18T15:13:41.817Z
 // ==============================================================================
+
+
+// ==============================================================================
+// FILE: next-env.d.ts
+// ==============================================================================
+
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+
+// ==============================================================================
+// FILE: next.config.mjs
+// ==============================================================================
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+};
+
+export default nextConfig;
+
+
+// ==============================================================================
+// FILE: package.json
+// ==============================================================================
+
+{
+  "name": "petal-and-pearl",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "node scripts/test-core.js"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "^15.2.0",
+    "razorpay": "^2.9.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}
+
+
+// ==============================================================================
+// FILE: postcss.config.js
+// ==============================================================================
+
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+
+// ==============================================================================
+// FILE: scripts/test-core.js
+// ==============================================================================
+
+// ==============================================================================
+// PETAL & PEARL — AUTOMATED CORE VERIFICATION SUITE
+// Tests Pricing Engine, RLS Sanitization, Free Shipping, Orders & Razorpay HMAC
+// ==============================================================================
+
+const assert = require("assert");
+const crypto = require("crypto");
+
+console.log("🌸 Running Petal & Pearl Automated Core Test Suite...\n");
+
+let passed = 0;
+let total = 0;
+
+function it(name, fn) {
+  total++;
+  try {
+    fn();
+    console.log(`  ✓ ${name}`);
+    passed++;
+  } catch (err) {
+    console.error(`  ✗ ${name}`);
+    console.error(err);
+  }
+}
+
+// 1. Pricing Engine Tests
+it("Pricing Rule: Default ₹100 markup (Supplier Cost ₹250 -> Selling Price ₹350)", () => {
+  const defaultMarkup = 100;
+  const supplierCost = 250;
+  const sellingPrice = Math.round(supplierCost + defaultMarkup);
+  assert.strictEqual(sellingPrice, 350, "Selling price must be exactly ₹350");
+});
+
+it("Pricing Rule: Configurable Custom Markup (Supplier Cost ₹250 + Markup ₹150 -> Selling Price ₹400)", () => {
+  const customMarkup = 150;
+  const supplierCost = 250;
+  const sellingPrice = Math.round(supplierCost + customMarkup);
+  assert.strictEqual(sellingPrice, 400, "Custom selling price must be ₹400");
+});
+
+it("Shipping Fee: Flat ₹99 on orders below threshold (₹600 -> ₹99 shipping)", () => {
+  const freeThreshold = 999;
+  const flatFee = 99;
+  const subtotal = 600;
+  const fee = subtotal >= freeThreshold ? 0 : flatFee;
+  assert.strictEqual(fee, 99, "Shipping fee must be ₹99");
+});
+
+it("Shipping Fee: Free shipping on orders at or above ₹999 (₹999 -> ₹0, ₹1500 -> ₹0)", () => {
+  const freeThreshold = 999;
+  const flatFee = 99;
+  assert.strictEqual(999 >= freeThreshold ? 0 : flatFee, 0, "₹999 must qualify for free shipping");
+  assert.strictEqual(1500 >= freeThreshold ? 0 : flatFee, 0, "₹1500 must qualify for free shipping");
+});
+
+// 2. Security & RLS Sanitization Test
+it("Data Security: Supplier Cost is strictly stripped from customer-facing products", () => {
+  const internalProduct = {
+    id: "prod-001",
+    name: "Baroque Pearl Drop Earrings",
+    supplier_cost: 250, // CONFIDENTIAL
+    selling_price: 350,
+    custom_markup: 100,
+  };
+
+  // Simulating sanitizePublicProduct
+  const { supplier_cost, custom_markup, ...publicProduct } = internalProduct;
+
+  assert.strictEqual(publicProduct.supplier_cost, undefined, "supplier_cost must not exist on public product");
+  assert.strictEqual(publicProduct.custom_markup, undefined, "custom_markup must not exist on public product");
+  assert.strictEqual(publicProduct.selling_price, 350, "selling_price must remain visible");
+});
+
+// 3. Contribution Margin Calculation Test
+it("Financial Contribution: Correctly deducts actual shipping, gateway fees, and packaging", () => {
+  const sellingPrice = 350;
+  const supplierCost = 250;
+  const shippingPaid = 99;
+  const actualShippingCost = 65;
+  const packagingCost = 25;
+  const gatewayFeePercent = 0.0236; // 2% + 18% GST
+
+  const totalCollected = sellingPrice + shippingPaid; // ₹449
+  const gatewayFee = Math.round(totalCollected * gatewayFeePercent * 100) / 100; // ~₹10.60
+  const totalExpenses = supplierCost + actualShippingCost + gatewayFee + packagingCost; // ₹250 + ₹65 + ₹10.60 + ₹25 = ₹350.60
+  const netContribution = Math.round((totalCollected - totalExpenses) * 100) / 100; // ₹449 - ₹350.60 = ₹98.40
+
+  assert.ok(netContribution > 0, "Net contribution must be positive");
+  assert.strictEqual(netContribution, 98.4, "Contribution must be exactly ₹98.40");
+});
+
+// 4. Razorpay HMAC Signature Verification Test
+it("Payment Security: Valid Razorpay SHA-256 HMAC signature passes verification", () => {
+  const secret = "test_razorpay_secret_key_12345";
+  const orderId = "order_OqK78yHj9KlmNo";
+  const paymentId = "pay_OqK78yHj9KlmNo";
+
+  // Generate valid signature
+  const validSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  // Verify
+  const verifySignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  assert.strictEqual(validSignature, verifySignature, "Valid signature must match");
+});
+
+it("Payment Security: Tampered payload or signature is strictly rejected", () => {
+  const secret = "test_razorpay_secret_key_12345";
+  const orderId = "order_OqK78yHj9KlmNo";
+  const paymentId = "pay_OqK78yHj9KlmNo";
+  const forgedSignature = "0000000000000000000000000000000000000000000000000000000000000000";
+
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  assert.notStrictEqual(forgedSignature, expectedSignature, "Forged signature must be rejected");
+});
+
+console.log(`\n========================================`);
+console.log(`Results: ${passed}/${total} tests passed successfully.`);
+console.log(`========================================\n`);
+
+if (passed !== total) {
+  process.exit(1);
+}
 
 
 // ==============================================================================
@@ -1123,6 +1350,7 @@ export default function AdminProductsPage() {
 
   // Link Importer State
   const [linkUrl, setLinkUrl] = useState("");
+  const [directImageUrl, setDirectImageUrl] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState("");
   const [quickCost, setQuickCost] = useState<number>(250);
@@ -1202,7 +1430,10 @@ export default function AdminProductsPage() {
       const res = await fetch("/api/admin/extract-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: linkUrl.trim() }),
+        body: JSON.stringify({
+          url: linkUrl.trim(),
+          directImageUrl: directImageUrl.trim() || undefined,
+        }),
       });
 
       const json = await res.json();
@@ -1250,6 +1481,8 @@ export default function AdminProductsPage() {
         is_bestseller: false,
         is_new: true,
         is_visible: true,
+        product_link: linkUrl.trim() || undefined,
+        source_url: linkUrl.trim() || undefined,
         tags: [extractedData.category, extractedData.subcategory, "new arrival", "link imported"],
         images: [
           {
@@ -1277,6 +1510,7 @@ export default function AdminProductsPage() {
         });
         setExtractedData(null);
         setLinkUrl("");
+        setDirectImageUrl("");
         loadProducts();
       } else {
         setExtractError(data.error || "Failed to publish product.");
@@ -1482,7 +1716,7 @@ export default function AdminProductsPage() {
         {/* Link Input Row */}
         <form onSubmit={handleExtractLink} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div className="md:col-span-8 space-y-1">
+            <div className="md:col-span-6 space-y-1">
               <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold font-sans">
                 Product Link / URL *
               </label>
@@ -1495,27 +1729,40 @@ export default function AdminProductsPage() {
                   required
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="Paste link (e.g. https://supplier-store.com/products/pearl-earrings)..."
+                  placeholder="Paste link (e.g. Nykaa, Myntra, Amazon, supplier URL)..."
                   className="w-full bg-white border border-champagne pl-9 pr-3 py-3 text-xs text-charcoal placeholder:text-taupe focus:outline-none focus:border-charcoal font-sans"
                 />
               </div>
             </div>
 
-            <div className="md:col-span-4">
+            <div className="md:col-span-4 space-y-1">
+              <label className="block text-[11px] uppercase tracking-wider text-charcoal font-semibold font-sans">
+                Product Image Link (Optional)
+              </label>
+              <input
+                type="url"
+                value={directImageUrl}
+                onChange={(e) => setDirectImageUrl(e.target.value)}
+                placeholder="Paste direct image link if you copied it..."
+                className="w-full bg-white border border-champagne px-3 py-3 text-xs text-charcoal placeholder:text-taupe focus:outline-none focus:border-charcoal font-sans"
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <button
                 type="submit"
                 disabled={extracting || !linkUrl.trim()}
-                className="btn-boutique-primary w-full py-3 px-4 flex items-center justify-center gap-2 text-xs font-sans disabled:opacity-50"
+                className="btn-boutique-primary w-full py-3 px-3 flex items-center justify-center gap-1.5 text-xs font-sans disabled:opacity-50"
               >
                 {extracting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Inspecting Link...</span>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Reading...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Inspect Link &amp; Autofill</span>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Add by Link</span>
                   </>
                 )}
               </button>
@@ -1530,7 +1777,7 @@ export default function AdminProductsPage() {
               <span className="text-xs uppercase tracking-wider font-semibold text-charcoal flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 {extractedData.isExtracted
-                  ? "Product Information Extracted"
+                  ? "Product Information & Image Ready"
                   : "Link Detected — Review & Set Price"}
               </span>
 
@@ -1553,6 +1800,8 @@ export default function AdminProductsPage() {
                       src={extractedData.image_url}
                       alt={extractedData.name || "Preview"}
                       fill
+                      unoptimized
+                      referrerPolicy="no-referrer"
                       className="object-cover"
                     />
                   ) : (
@@ -1564,7 +1813,7 @@ export default function AdminProductsPage() {
 
                 <div className="space-y-1">
                   <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
-                    Image URL
+                    Product Image URL
                   </label>
                   <input
                     type="url"
@@ -1575,6 +1824,43 @@ export default function AdminProductsPage() {
                     className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal"
                     placeholder="https://..."
                   />
+                </div>
+
+                {/* Quick Studio Photo Presets */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] uppercase tracking-wider text-taupe font-sans font-medium block">
+                    Or Pick Studio Aesthetic Photo:
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px] font-sans">
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Baroque Drops
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Pearl Choker
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Claw Clip
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                    >
+                      ✦ Velvet Bow
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1804,6 +2090,8 @@ export default function AdminProductsPage() {
                               src={p.images[0].image_url}
                               alt={p.name}
                               fill
+                              unoptimized
+                              referrerPolicy="no-referrer"
                               className="object-cover"
                             />
                           )}
@@ -1820,6 +2108,17 @@ export default function AdminProductsPage() {
                           <span className="text-[10px] text-taupe font-mono block">
                             SKU: {p.sku}
                           </span>
+                          {(p.product_link || p.source_url) && (
+                            <a
+                              href={p.product_link || p.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-taupe hover:text-charcoal underline inline-flex items-center gap-0.5 mt-0.5 font-sans"
+                            >
+                              <span>Source Link</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -2616,6 +2915,30 @@ export default function AdminSuppliersPage() {
 
 import { NextResponse } from "next/server";
 
+const CATEGORY_STUDIO_IMAGES: Record<string, string> = {
+  earrings: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80",
+  necklaces: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
+  bracelets: "https://images.unsplash.com/photo-1611591475870-761214041724?auto=format&fit=crop&w=800&q=80",
+  rings: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80",
+  "claw-clips": "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80",
+  scrunchies: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
+  "hair-bows": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+  "phone-charms": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80",
+  pouches: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+  "gift-sets": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80",
+};
+
+function isDirectImageUrl(urlStr: string): boolean {
+  return (
+    /\.(jpg|jpeg|png|webp|avif|gif)(\?.*)?$/i.test(urlStr) ||
+    urlStr.includes("images.unsplash.com") ||
+    urlStr.includes("m.media-amazon.com/images") ||
+    urlStr.includes("adn-static1.nykaa.com") ||
+    urlStr.includes("assets.myntassets.com") ||
+    urlStr.includes("/media/catalog/product")
+  );
+}
+
 function cleanTitleFromUrl(urlStr: string): string {
   try {
     const parsed = new URL(urlStr);
@@ -2623,7 +2946,7 @@ function cleanTitleFromUrl(urlStr: string): string {
     const parts = pathname.split("/").filter(Boolean);
     const lastPart = parts[parts.length - 1] || "Boutique Accessory";
     
-    // Remove file extensions or IDs
+    // Remove query params or trailing numbers/IDs
     const clean = lastPart
       .replace(/\.(html|htm|php|aspx|json)$/i, "")
       .replace(/^[0-9_-]+|[0-9_-]+$/g, "")
@@ -2678,106 +3001,160 @@ function detectCategoryFromText(text: string): { category: "jewellery" | "hair-a
 
 export async function POST(req: Request) {
   try {
-    const { url } = await req.json();
+    const { url, directImageUrl } = await req.json();
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "A valid product link is required." }, { status: 400 });
     }
 
+    const trimmedUrl = url.trim();
     let parsedUrl: URL;
     try {
-      parsedUrl = new URL(url.trim());
+      parsedUrl = new URL(trimmedUrl);
     } catch {
       return NextResponse.json({ error: "Please enter a valid URL (e.g. https://...)." }, { status: 400 });
     }
 
     let title = "";
     let description = "";
-    let imageUrl = "";
+    let imageUrl = typeof directImageUrl === "string" && directImageUrl.trim() ? directImageUrl.trim() : "";
     let isExtracted = false;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      const response = await fetch(parsedUrl.toString(), {
-        signal: controller.signal,
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const html = await response.text();
-
-        // 1. Extract Title
-        const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
-                             html.match(/<meta[^>]*name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i);
-        if (ogTitleMatch && ogTitleMatch[1]) {
-          title = ogTitleMatch[1].trim();
-        } else {
-          const titleTagMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-          if (titleTagMatch && titleTagMatch[1]) {
-            title = titleTagMatch[1].split(/[|\-–—]/)[0].trim();
-          }
-        }
-
-        // 2. Extract Image
-        const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
-                             html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
-        if (ogImageMatch && ogImageMatch[1]) {
-          imageUrl = ogImageMatch[1].trim();
-          // Resolve relative URLs
-          if (imageUrl.startsWith("/")) {
-            imageUrl = `${parsedUrl.origin}${imageUrl}`;
-          }
-        }
-
-        // 3. Extract Description
-        const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
-                            html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-        if (ogDescMatch && ogDescMatch[1]) {
-          description = ogDescMatch[1].trim();
-        }
-
-        if (title || imageUrl) {
-          isExtracted = true;
-        }
-      }
-    } catch {
-      // Fetch failed or timed out, will fall back gracefully
+    // Check if the link itself is an image URL
+    if (!imageUrl && isDirectImageUrl(trimmedUrl)) {
+      imageUrl = trimmedUrl;
+      title = cleanTitleFromUrl(trimmedUrl);
+      isExtracted = true;
     }
 
-    // Fallbacks if not extracted or incomplete
+    // Try HTML extraction if not already resolved as a direct image
+    if (!imageUrl || !title) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+        const response = await fetch(parsedUrl.toString(), {
+          signal: controller.signal,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Ch-Ua": "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"",
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": "\"Windows\"",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Upgrade-Insecure-Requests": "1",
+          },
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const html = await response.text();
+
+          // 1. Title Extraction (all meta and HTML tag orders)
+          if (!title) {
+            const ogTitle =
+              html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i)?.[1] ||
+              html.match(/<meta[^>]*name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:title["']/i)?.[1];
+
+            if (ogTitle) {
+              title = ogTitle.trim();
+            } else {
+              const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+              if (titleTag) {
+                title = titleTag.split(/[|\-–—]/)[0].trim();
+              }
+            }
+          }
+
+          // 2. Image Extraction (OG, Twitter, JSON-LD, platform patterns)
+          if (!imageUrl) {
+            const extractedImg =
+              html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)?.[1] ||
+              html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image["']/i)?.[1] ||
+              html.match(/<meta[^>]*name=["']twitter:image:src["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<link[^>]*rel=["']image_src["'][^>]*href=["']([^"']+)["']/i)?.[1] ||
+              html.match(/https?:\/\/adn-static1\.nykaa\.com\/media\/catalog\/product\/[^\s"\x27]+\.(jpg|jpeg|png|webp)/i)?.[0] ||
+              html.match(/https?:\/\/m\.media-amazon\.com\/images\/I\/[^\s"\x27]+\.(jpg|jpeg|png|webp)/i)?.[0] ||
+              html.match(/https?:\/\/assets\.myntassets\.com\/[^\s"\x27]+\.(jpg|jpeg|png|webp)/i)?.[0];
+
+            if (extractedImg) {
+              imageUrl = extractedImg.trim();
+              if (imageUrl.startsWith("//")) {
+                imageUrl = "https:" + imageUrl;
+              } else if (imageUrl.startsWith("/")) {
+                imageUrl = parsedUrl.origin + imageUrl;
+              }
+            } else {
+              // JSON-LD schema search
+              const jsonLdMatch = html.match(/"image":\s*(\"[^\"]+\"|\[[^\]]+\])/i);
+              if (jsonLdMatch && jsonLdMatch[1]) {
+                const imgParsed = jsonLdMatch[1].match(/https?:\/\/[^"\x27]+/);
+                if (imgParsed) {
+                  imageUrl = imgParsed[0];
+                }
+              }
+            }
+          }
+
+          // 3. Description Extraction
+          if (!description) {
+            const ogDesc =
+              html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i)?.[1] ||
+              html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)?.[1] ||
+              html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i)?.[1];
+
+            if (ogDesc) {
+              description = ogDesc.trim();
+            }
+          }
+
+          if (title || imageUrl) {
+            isExtracted = true;
+          }
+        }
+      } catch {
+        // Fallback gracefully if blocked or timed out
+      }
+    }
+
+    // Determine category based on title, URL slug and text
+    const { category, subcategory } = detectCategoryFromText((title || "") + " " + trimmedUrl);
+
+    // Fallbacks if not extracted
     if (!title) {
-      title = cleanTitleFromUrl(url);
+      title = cleanTitleFromUrl(trimmedUrl);
     }
 
     if (!description) {
-      description = `An elegant boutique addition to Petal & Pearl, designed with soft feminine contours and delicate details for daily grace.`;
+      description = "A thoughtfully curated " + subcategory.replace("-", " ") + " boutique piece for Petal & Pearl. Designed with organic contours and feminine details for effortless daily wear.";
     }
 
     if (!imageUrl) {
-      imageUrl = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+      // Pick matching studio category image so the product NEVER has a blank image
+      imageUrl = CATEGORY_STUDIO_IMAGES[subcategory] || CATEGORY_STUDIO_IMAGES.earrings;
     }
-
-    const { category, subcategory } = detectCategoryFromText(title + " " + url);
 
     return NextResponse.json({
       success: true,
       isExtracted,
-      sourceUrl: url,
+      sourceUrl: trimmedUrl,
       data: {
         name: title,
         description,
         image_url: imageUrl,
         category,
         subcategory,
+        product_link: trimmedUrl,
       },
     });
   } catch (error) {
@@ -4780,13 +5157,20 @@ export default function FAQPage() {
 // FILE: src/app/layout.tsx
 // ==============================================================================
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/cart-context";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#39342F",
+};
 
 export const metadata: Metadata = {
   title: "Petal & Pearl | Beauty in Every Little Detail",
@@ -5781,6 +6165,7 @@ import {
   Sparkles,
   Heart,
   Share2,
+  ExternalLink,
 } from "lucide-react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -5886,6 +6271,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     src={img.image_url}
                     alt={img.alt_text || product.name}
                     fill
+                    unoptimized
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.srcset = "";
+                      target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                    }}
                     className="object-cover object-center"
                   />
                 </button>
@@ -5901,6 +6293,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 alt={images[selectedImageIdx].alt_text || product.name}
                 fill
                 priority
+                unoptimized
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.srcset = "";
+                  target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                }}
                 className="object-cover object-center transition-all duration-500"
               />
             )}
@@ -5927,9 +6326,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           
           {/* Header & Price */}
           <div className="space-y-2 border-b border-[#EBE3D8] pb-6">
-            <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block">
-              {product.subcategory.replace("-", " ")} &bull; SKU: {selectedVariant?.sku || product.sku}
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block">
+                {product.subcategory.replace("-", " ")} &bull; SKU: {selectedVariant?.sku || product.sku}
+              </span>
+              {(product.product_link || product.source_url) && (
+                <a
+                  href={product.product_link || product.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-sans text-taupe hover:text-charcoal transition-colors underline"
+                  title="View original product source"
+                >
+                  <span>Source Reference</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
             <h1 className="font-serif text-3xl sm:text-4xl text-charcoal leading-snug">
               {product.name}
             </h1>
@@ -7757,6 +8170,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
+            unoptimized
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.srcset = "";
+              target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+            }}
             className={`object-cover object-center transition-all duration-700 group-hover:scale-105 ${
               secondaryImage ? "group-hover:opacity-0" : ""
             }`}
@@ -7769,6 +8189,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             alt={secondaryImage.alt_text || product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized
+            referrerPolicy="no-referrer"
             className="object-cover object-center absolute inset-0 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105"
           />
         )}
@@ -8477,6 +8899,8 @@ export function saveProductAdmin(productData: Partial<Product> & { name: string;
     is_new: productData.is_new !== undefined ? productData.is_new : true,
     is_visible: productData.is_visible !== undefined ? productData.is_visible : true,
     tags: productData.tags || [],
+    product_link: productData.product_link || productData.source_url,
+    source_url: productData.source_url || productData.product_link,
     images: productData.images || [
       {
         id: `img-${Date.now()}`,
@@ -8715,6 +9139,8 @@ export interface Product {
   images: ProductImage[];
   variants: ProductVariant[];
   tags: string[];
+  product_link?: string;
+  source_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -8804,75 +9230,6 @@ export interface Supplier {
 
 
 // ==============================================================================
-// FILE: package.json
-// ==============================================================================
-
-{
-  "name": "petal-and-pearl",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "test": "node scripts/test-core.js"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.468.0",
-    "next": "^15.2.0",
-    "razorpay": "^2.9.8",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.5.5"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
-  }
-}
-
-
-// ==============================================================================
-// FILE: next.config.mjs
-// ==============================================================================
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
-      {
-        protocol: "https",
-        hostname: "thepearlpetals.in",
-      },
-    ],
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-};
-
-export default nextConfig;
-
-
-// ==============================================================================
 // FILE: tailwind.config.ts
 // ==============================================================================
 
@@ -8918,140 +9275,50 @@ export default config;
 
 
 // ==============================================================================
-// FILE: scripts/test-core.js
+// FILE: tsconfig.json
 // ==============================================================================
 
-// ==============================================================================
-// PETAL & PEARL — AUTOMATED CORE VERIFICATION SUITE
-// Tests Pricing Engine, RLS Sanitization, Free Shipping, Orders & Razorpay HMAC
-// ==============================================================================
-
-const assert = require("assert");
-const crypto = require("crypto");
-
-console.log("🌸 Running Petal & Pearl Automated Core Test Suite...\n");
-
-let passed = 0;
-let total = 0;
-
-function it(name, fn) {
-  total++;
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err) {
-    console.error(`  ✗ ${name}`);
-    console.error(err);
-  }
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "target": "ES2017"
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }
 
-// 1. Pricing Engine Tests
-it("Pricing Rule: Default ₹100 markup (Supplier Cost ₹250 -> Selling Price ₹350)", () => {
-  const defaultMarkup = 100;
-  const supplierCost = 250;
-  const sellingPrice = Math.round(supplierCost + defaultMarkup);
-  assert.strictEqual(sellingPrice, 350, "Selling price must be exactly ₹350");
-});
 
-it("Pricing Rule: Configurable Custom Markup (Supplier Cost ₹250 + Markup ₹150 -> Selling Price ₹400)", () => {
-  const customMarkup = 150;
-  const supplierCost = 250;
-  const sellingPrice = Math.round(supplierCost + customMarkup);
-  assert.strictEqual(sellingPrice, 400, "Custom selling price must be ₹400");
-});
+// ==============================================================================
+// FILE: vercel.json
+// ==============================================================================
 
-it("Shipping Fee: Flat ₹99 on orders below threshold (₹600 -> ₹99 shipping)", () => {
-  const freeThreshold = 999;
-  const flatFee = 99;
-  const subtotal = 600;
-  const fee = subtotal >= freeThreshold ? 0 : flatFee;
-  assert.strictEqual(fee, 99, "Shipping fee must be ₹99");
-});
-
-it("Shipping Fee: Free shipping on orders at or above ₹999 (₹999 -> ₹0, ₹1500 -> ₹0)", () => {
-  const freeThreshold = 999;
-  const flatFee = 99;
-  assert.strictEqual(999 >= freeThreshold ? 0 : flatFee, 0, "₹999 must qualify for free shipping");
-  assert.strictEqual(1500 >= freeThreshold ? 0 : flatFee, 0, "₹1500 must qualify for free shipping");
-});
-
-// 2. Security & RLS Sanitization Test
-it("Data Security: Supplier Cost is strictly stripped from customer-facing products", () => {
-  const internalProduct = {
-    id: "prod-001",
-    name: "Baroque Pearl Drop Earrings",
-    supplier_cost: 250, // CONFIDENTIAL
-    selling_price: 350,
-    custom_markup: 100,
-  };
-
-  // Simulating sanitizePublicProduct
-  const { supplier_cost, custom_markup, ...publicProduct } = internalProduct;
-
-  assert.strictEqual(publicProduct.supplier_cost, undefined, "supplier_cost must not exist on public product");
-  assert.strictEqual(publicProduct.custom_markup, undefined, "custom_markup must not exist on public product");
-  assert.strictEqual(publicProduct.selling_price, 350, "selling_price must remain visible");
-});
-
-// 3. Contribution Margin Calculation Test
-it("Financial Contribution: Correctly deducts actual shipping, gateway fees, and packaging", () => {
-  const sellingPrice = 350;
-  const supplierCost = 250;
-  const shippingPaid = 99;
-  const actualShippingCost = 65;
-  const packagingCost = 25;
-  const gatewayFeePercent = 0.0236; // 2% + 18% GST
-
-  const totalCollected = sellingPrice + shippingPaid; // ₹449
-  const gatewayFee = Math.round(totalCollected * gatewayFeePercent * 100) / 100; // ~₹10.60
-  const totalExpenses = supplierCost + actualShippingCost + gatewayFee + packagingCost; // ₹250 + ₹65 + ₹10.60 + ₹25 = ₹350.60
-  const netContribution = Math.round((totalCollected - totalExpenses) * 100) / 100; // ₹449 - ₹350.60 = ₹98.40
-
-  assert.ok(netContribution > 0, "Net contribution must be positive");
-  assert.strictEqual(netContribution, 98.4, "Contribution must be exactly ₹98.40");
-});
-
-// 4. Razorpay HMAC Signature Verification Test
-it("Payment Security: Valid Razorpay SHA-256 HMAC signature passes verification", () => {
-  const secret = "test_razorpay_secret_key_12345";
-  const orderId = "order_OqK78yHj9KlmNo";
-  const paymentId = "pay_OqK78yHj9KlmNo";
-
-  // Generate valid signature
-  const validSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
-
-  // Verify
-  const verifySignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
-
-  assert.strictEqual(validSignature, verifySignature, "Valid signature must match");
-});
-
-it("Payment Security: Tampered payload or signature is strictly rejected", () => {
-  const secret = "test_razorpay_secret_key_12345";
-  const orderId = "order_OqK78yHj9KlmNo";
-  const paymentId = "pay_OqK78yHj9KlmNo";
-  const forgedSignature = "0000000000000000000000000000000000000000000000000000000000000000";
-
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
-
-  assert.notStrictEqual(forgedSignature, expectedSignature, "Forged signature must be rejected");
-});
-
-console.log(`\n========================================`);
-console.log(`Results: ${passed}/${total} tests passed successfully.`);
-console.log(`========================================\n`);
-
-if (passed !== total) {
-  process.exit(1);
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "next build"
 }
 
