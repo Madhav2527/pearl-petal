@@ -19,8 +19,9 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Shop All", href: "/shop" },
+    { label: "🔥 Hottest Picks", href: "/shop?filter=hottest" },
+    { label: "Hair Clips", href: "/category/hair-accessories" },
     { label: "Jewellery", href: "/category/jewellery" },
-    { label: "Hair Accessories", href: "/category/hair-accessories" },
     { label: "Everyday Essentials", href: "/category/everyday-essentials" },
     { label: "Gifts", href: "/category/gifts" },
   ];

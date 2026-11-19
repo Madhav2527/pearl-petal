@@ -50,38 +50,67 @@ function cleanTitleFromUrl(urlStr: string): string {
 function detectCategoryFromText(text: string): { category: "jewellery" | "hair-accessories" | "everyday-essentials" | "gifts"; subcategory: string } {
   const lower = text.toLowerCase();
   
-  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk")) {
+  // Hair Accessories (Claw clips, hair clips, barrettes, pins, scrunchies, ribbons, hair bows)
+  if (
+    lower.includes("claw") ||
+    lower.includes("hair clip") ||
+    lower.includes("hairclip") ||
+    lower.includes("clip") ||
+    lower.includes("jaw clip") ||
+    lower.includes("hair pin") ||
+    lower.includes("hairpin") ||
+    lower.includes("banana clip") ||
+    lower.includes("alligator clip") ||
+    lower.includes("barrette") ||
+    lower.includes("snap clip")
+  ) {
+    return { category: "hair-accessories", subcategory: "claw-clips" };
+  }
+  if (
+    lower.includes("scrunchie") ||
+    lower.includes("scrunchy") ||
+    lower.includes("hair tie") ||
+    lower.includes("rubber band")
+  ) {
+    return { category: "hair-accessories", subcategory: "scrunchies" };
+  }
+  if (
+    lower.includes("bow") ||
+    lower.includes("ribbon") ||
+    lower.includes("headband") ||
+    lower.includes("hairband")
+  ) {
+    return { category: "hair-accessories", subcategory: "hair-bows" };
+  }
+
+  // Jewellery
+  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk") || lower.includes("drop earring")) {
     return { category: "jewellery", subcategory: "earrings" };
   }
-  if (lower.includes("necklace") || lower.includes("choker") || lower.includes("chain") || lower.includes("pendant")) {
+  if (lower.includes("necklace") || lower.includes("choker") || lower.includes("chain") || lower.includes("pendant") || lower.includes("locket")) {
     return { category: "jewellery", subcategory: "necklaces" };
   }
-  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("anklet") || lower.includes("cuff")) {
+  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("anklet") || lower.includes("cuff") || lower.includes("wristband")) {
     return { category: "jewellery", subcategory: "bracelets" };
   }
   if (lower.includes("ring") || lower.includes("band")) {
     return { category: "jewellery", subcategory: "rings" };
   }
-  if (lower.includes("claw") || lower.includes("clip") || lower.includes("jaw")) {
-    return { category: "hair-accessories", subcategory: "claw-clips" };
-  }
-  if (lower.includes("scrunchie") || lower.includes("scrunchy")) {
-    return { category: "hair-accessories", subcategory: "scrunchies" };
-  }
-  if (lower.includes("bow") || lower.includes("ribbon") || lower.includes("barrette") || lower.includes("headband")) {
-    return { category: "hair-accessories", subcategory: "hair-bows" };
-  }
-  if (lower.includes("phone") || lower.includes("charm") || lower.includes("strap")) {
+
+  // Everyday Essentials
+  if (lower.includes("phone") || lower.includes("charm") || lower.includes("strap") || lower.includes("lanyard") || lower.includes("keychain")) {
     return { category: "everyday-essentials", subcategory: "phone-charms" };
   }
-  if (lower.includes("pouch") || lower.includes("case") || lower.includes("organizer") || lower.includes("bag")) {
+  if (lower.includes("pouch") || lower.includes("case") || lower.includes("organizer") || lower.includes("vanity") || lower.includes("tote")) {
     return { category: "everyday-essentials", subcategory: "pouches" };
   }
-  if (lower.includes("gift") || lower.includes("set") || lower.includes("hamper") || lower.includes("box")) {
+
+  // Gifts
+  if (lower.includes("gift") || lower.includes("set") || lower.includes("hamper") || lower.includes("box") || lower.includes("combo")) {
     return { category: "gifts", subcategory: "gift-sets" };
   }
 
-  return { category: "jewellery", subcategory: "earrings" };
+  return { category: "hair-accessories", subcategory: "claw-clips" };
 }
 
 export async function POST(req: Request) {

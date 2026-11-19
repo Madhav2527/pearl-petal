@@ -30,10 +30,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   }, [slug]);
 
   const [selectedSub, setSelectedSub] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("featured");
+  const [onlyHottest, setOnlyHottest] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>("relevance");
 
   const filtered = useMemo(() => {
     let result = [...allProducts];
+    if (onlyHottest) {
+      result = result.filter((p) => p.is_bestseller);
+    }
     if (selectedSub !== "all") {
       result = result.filter((p) => p.subcategory === selectedSub);
     }
@@ -44,15 +48,28 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       case "price-desc":
         result.sort((a, b) => b.selling_price - a.selling_price);
         break;
+      case "hottest":
+        result.sort((a, b) => (b.is_bestseller ? 1 : 0) - (a.is_bestseller ? 1 : 0));
+        break;
       case "newest":
         result.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0));
         break;
+      case "alpha":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "relevance":
       default:
-        result.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        result.sort((a, b) => {
+          const scoreB = (b.is_bestseller ? 4 : 0) + (b.is_featured ? 2 : 0) + (b.is_new ? 1 : 0);
+          const scoreA = (a.is_bestseller ? 4 : 0) + (a.is_featured ? 2 : 0) + (a.is_new ? 1 : 0);
+          return scoreB - scoreA;
+        });
         break;
     }
     return result;
-  }, [allProducts, selectedSub, sortBy]);
+  }, [allProducts, selectedSub, onlyHottest, sortBy]);
+
+  const hottestCount = allProducts.filter((p) => p.is_bestseller).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
@@ -86,29 +103,60 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() => setSelectedSub("all")}
-            className={`px-4 py-2 text-xs uppercase tracking-wider font-sans transition-all ${
-              selectedSub === "all"
+            onClick={() => {
+              setSelectedSub("all");
+              setOnlyHottest(false);
+            }}
+            className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all ${
+              selectedSub === "all" && !onlyHottest
                 ? "bg-charcoal text-white font-medium"
                 : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
             }`}
           >
-            All {categoryMeta.name}
+            All {categoryMeta.name} ({allProducts.length})
           </button>
-          {categoryMeta.subcategories.map((sub) => (
+
+          {hottestCount > 0 && (
             <button
-              key={sub.id}
               type="button"
-              onClick={() => setSelectedSub(sub.id)}
-              className={`px-4 py-2 text-xs uppercase tracking-wider font-sans transition-all ${
-                selectedSub === sub.id
-                  ? "bg-charcoal text-white font-medium"
-                  : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+              onClick={() => setOnlyHottest(!onlyHottest)}
+              className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1 ${
+                onlyHottest
+                  ? "bg-[#2D2A26] text-[#FAF8F5] font-medium shadow-sm"
+                  : "bg-[#FAF7F2] border border-champagne text-[#C2714F] hover:border-charcoal font-medium"
               }`}
             >
-              {sub.name}
+              <span>🔥 Hottest Picks</span>
+              <span className="text-[10px] opacity-80">({hottestCount})</span>
             </button>
-          ))}
+          )}
+
+          {categoryMeta.subcategories.map((sub) => {
+            const count = allProducts.filter((p) => p.subcategory === sub.id).length;
+            const isSelected = selectedSub === sub.id;
+            return (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSub(sub.id);
+                  setOnlyHottest(false);
+                }}
+                className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1 ${
+                  isSelected
+                    ? "bg-charcoal text-white font-medium"
+                    : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                }`}
+              >
+                <span>{sub.name}</span>
+                {count > 0 && (
+                  <span className={`text-[10px] ${isSelected ? "opacity-80" : "text-taupe"}`}>
+                    ({count})
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Sort */}
@@ -119,10 +167,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-transparent text-charcoal text-xs uppercase tracking-wider focus:outline-none cursor-pointer"
           >
-            <option value="featured">Featured First</option>
+            <option value="relevance">Relevance &bull; Curated</option>
+            <option value="price-asc">Price: Low to High (₹)</option>
+            <option value="price-desc">Price: High to Low (₹)</option>
+            <option value="hottest">🔥 Hottest Picks First</option>
             <option value="newest">New Arrivals</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+            <option value="alpha">Alphabetical (A - Z)</option>
           </select>
         </div>
 

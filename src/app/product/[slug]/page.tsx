@@ -68,13 +68,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     ? product.images
     : [{ id: "fallback", image_url: "", alt_text: product.name, display_order: 1 }];
 
-  // Find related products in same category
-  const relatedProducts = getPublicProducts({ category: product.category })
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4);
+  const [relatedProducts, setRelatedProducts] = useState<PublicProduct[]>([]);
 
-  const currentPrice = selectedVariant?.price_override ?? product.selling_price;
-  const currentStock = selectedVariant ? selectedVariant.stock : product.stock;
+  useEffect(() => {
+    if (product) {
+      fetch(`/api/products?category=${encodeURIComponent(product.category)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.products && Array.isArray(data.products)) {
+            setRelatedProducts(data.products.filter((p: PublicProduct) => p.id !== product.id).slice(0, 4));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [product]);
+
+  const currentPrice = selectedVariant?.price_override ?? product?.selling_price ?? 0;
+  const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock ?? 0);
 
   const handleAddToBag = () => {
     if (currentStock <= 0) return;
@@ -161,13 +171,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-1.5">
               {product.is_bestseller && (
-                <span className="bg-charcoal text-ivory text-[10px] uppercase tracking-widest px-3 py-1 font-sans font-medium">
-                  Boutique Bestseller
+                <span className="bg-[#2D2A26] text-[#FAF8F5] text-[10px] uppercase tracking-wider px-3 py-1 font-sans font-semibold shadow-sm">
+                  🔥 Hottest Pick
                 </span>
               )}
               {product.is_new && !product.is_bestseller && (
                 <span className="bg-ivory text-charcoal text-[10px] uppercase tracking-widest px-3 py-1 font-sans font-medium border border-champagne">
-                  New Arrival
+                  ✦ New Drop
                 </span>
               )}
             </div>

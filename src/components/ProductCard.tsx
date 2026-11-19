@@ -56,13 +56,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
           {product.is_bestseller && (
-            <span className="bg-charcoal text-ivory text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-medium">
-              Bestseller
+            <span className="bg-[#2D2A26] text-[#FAF8F5] text-[9px] uppercase tracking-wider px-2.5 py-1 font-sans font-semibold flex items-center gap-1 shadow-sm">
+              <span>🔥 Hottest Pick</span>
             </span>
           )}
           {product.is_new && !product.is_bestseller && (
             <span className="bg-ivory text-charcoal text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-medium border border-champagne">
-              New
+              ✦ New Drop
             </span>
           )}
           {product.stock <= 5 && product.stock > 0 && (
@@ -92,7 +92,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       <div className="p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
           <span className="text-[10px] uppercase tracking-widest text-taupe font-sans block mb-1">
-            {product.subcategory.replace("-", " ")}
+            {product.subcategory === "claw-clips"
+              ? "Claw Clip"
+              : product.subcategory === "hair-bows"
+              ? "Hair Bow"
+              : product.subcategory.replace("-", " ")}
           </span>
           <Link href={`/product/${product.slug}`} className="block">
             <h3 className="font-serif text-base sm:text-lg text-charcoal leading-snug line-clamp-1 hover:text-taupe transition-colors">

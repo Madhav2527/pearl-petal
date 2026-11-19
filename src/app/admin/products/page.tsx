@@ -34,6 +34,8 @@ export default function AdminProductsPage() {
   const [extractError, setExtractError] = useState("");
   const [quickCost, setQuickCost] = useState<number>(250);
   const [quickPrice, setQuickPrice] = useState<number>(350); // Auto +₹100
+  const [quickHottest, setQuickHottest] = useState<boolean>(false);
+  const [adminTableFilter, setAdminTableFilter] = useState<string>("all");
   const [extractedData, setExtractedData] = useState<{
     name: string;
     description: string;
@@ -157,7 +159,7 @@ export default function AdminProductsPage() {
         custom_markup: customMarkup !== 100 ? customMarkup : null,
         stock: 25,
         is_featured: true,
-        is_bestseller: false,
+        is_bestseller: quickHottest,
         is_new: true,
         is_visible: true,
         product_link: linkUrl.trim() || undefined,
@@ -190,6 +192,7 @@ export default function AdminProductsPage() {
         setExtractedData(null);
         setLinkUrl("");
         setDirectImageUrl("");
+        setQuickHottest(false);
         loadProducts();
       } else {
         setExtractError(data.error || "Failed to publish product.");
@@ -198,6 +201,27 @@ export default function AdminProductsPage() {
       setExtractError("Network error while publishing product.");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleToggleHottest = async (product: Product) => {
+    try {
+      const updated = {
+        ...product,
+        is_bestseller: !product.is_bestseller,
+      };
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === product.id ? { ...p, is_bestseller: !p.is_bestseller } : p))
+        );
+      }
+    } catch {
+      alert("Failed to update product.");
     }
   };
 
@@ -599,18 +623,34 @@ export default function AdminProductsPage() {
                       }
                       className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
                     >
+                      <option value="claw-clips">Claw Clips (Hair Clips)</option>
+                      <option value="hair-bows">Hair Bows &amp; Ribbons</option>
+                      <option value="scrunchies">Silk Scrunchies</option>
                       <option value="earrings">Earrings</option>
-                      <option value="necklaces">Necklaces</option>
-                      <option value="bracelets">Bracelets</option>
+                      <option value="necklaces">Necklaces &amp; Chokers</option>
+                      <option value="bracelets">Bracelets &amp; Bangles</option>
                       <option value="rings">Rings</option>
-                      <option value="claw-clips">Claw Clips</option>
-                      <option value="scrunchies">Scrunchies</option>
-                      <option value="hair-bows">Hair Bows</option>
-                      <option value="phone-charms">Phone Charms</option>
-                      <option value="pouches">Pouches</option>
+                      <option value="phone-charms">Phone Charms &amp; Straps</option>
+                      <option value="pouches">Pouches &amp; Bags</option>
                       <option value="gift-sets">Gift Sets</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Hottest Pick Toggle in Quick Add */}
+                <div className="bg-white/80 border border-champagne p-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={quickHottest}
+                      onChange={(e) => setQuickHottest(e.target.checked)}
+                      className="accent-charcoal rounded-none w-4 h-4 cursor-pointer"
+                    />
+                    <span className="text-xs text-charcoal font-medium font-sans flex items-center gap-1.5">
+                      <span>🔥 Feature in &quot;Hottest Picks&quot; Collection</span>
+                      <span className="text-[10px] text-taupe font-normal">(Displays in Hottest Picks section on Homepage &amp; Shop)</span>
+                    </span>
+                  </label>
                 </div>
 
                 {/* Dynamic Pricing Engine Calculation Card */}
@@ -716,14 +756,85 @@ export default function AdminProductsPage() {
       {/* EXISTING PRODUCT CATALOGUE TABLE                                          */}
       {/* ========================================================================= */}
       <div className="bg-white border border-[#EBE3D8] shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-[#EBE3D8] flex items-center justify-between">
-          <h3 className="font-serif text-lg text-charcoal">
-            All Storefront Products ({products.length})
-          </h3>
+        <div className="p-4 border-b border-[#EBE3D8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-serif text-lg text-charcoal">
+              All Storefront Products ({products.length})
+            </h3>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("all")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "all"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                All ({products.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("hottest")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all flex items-center gap-1 ${
+                  adminTableFilter === "hottest"
+                    ? "bg-[#2D2A26] text-[#FAF8F5] border-[#2D2A26] font-medium shadow-xs"
+                    : "bg-white text-[#C2714F] border-champagne hover:border-charcoal font-medium"
+                }`}
+              >
+                <span>🔥 Hottest Picks</span>
+                <span>({products.filter((p) => p.is_bestseller).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("hair-accessories")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "hair-accessories"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Hair Clips ({products.filter((p) => p.category === "hair-accessories").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("jewellery")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "jewellery"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Jewellery ({products.filter((p) => p.category === "jewellery").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("everyday-essentials")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "everyday-essentials"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Everyday ({products.filter((p) => p.category === "everyday-essentials").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("gifts")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "gifts"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Gifts ({products.filter((p) => p.category === "gifts").length})
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             onClick={loadProducts}
-            className="text-xs text-taupe hover:text-charcoal flex items-center gap-1 font-sans"
+            className="text-xs text-taupe hover:text-charcoal flex items-center gap-1 font-sans shrink-0"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Refresh</span>
@@ -739,6 +850,7 @@ export default function AdminProductsPage() {
                 <th className="p-4">Supplier Cost</th>
                 <th className="p-4">Selling Price</th>
                 <th className="p-4">Stock</th>
+                <th className="p-4">Hottest Pick</th>
                 <th className="p-4">Visibility</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -746,18 +858,24 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-[#EBE3D8]/60 text-charcoal">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-taupe">
+                  <td colSpan={8} className="p-8 text-center text-taupe">
                     Loading catalogue...
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-taupe">
+                  <td colSpan={8} className="p-8 text-center text-taupe">
                     No products found. Add your first piece using the link importer above.
                   </td>
                 </tr>
               ) : (
-                products.map((p) => (
+                products
+                  .filter((p) => {
+                    if (adminTableFilter === "hottest") return p.is_bestseller;
+                    if (adminTableFilter !== "all") return p.category === adminTableFilter;
+                    return true;
+                  })
+                  .map((p) => (
                   <tr key={p.id} className="hover:bg-[#FAF8F5] transition-colors">
                     
                     {/* Item Image & Title */}
@@ -806,7 +924,7 @@ export default function AdminProductsPage() {
                     <td className="p-4">
                       <span className="capitalize">{p.category.replace("-", " ")}</span>
                       <span className="text-[10px] text-taupe block capitalize">
-                        {p.subcategory.replace("-", " ")}
+                        {p.subcategory === "claw-clips" ? "Claw Clip (Hair Clip)" : p.subcategory.replace("-", " ")}
                       </span>
                     </td>
 
@@ -836,6 +954,23 @@ export default function AdminProductsPage() {
                       >
                         {p.stock} in stock
                       </span>
+                    </td>
+
+                    {/* Hottest Pick 1-Click Toggle */}
+                    <td className="p-4">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleHottest(p)}
+                        className={`px-2.5 py-1 text-[11px] font-sans transition-all inline-flex items-center gap-1 border ${
+                          p.is_bestseller
+                            ? "bg-[#2D2A26] text-[#FAF8F5] border-[#2D2A26] font-medium shadow-xs"
+                            : "bg-white text-taupe border-[#EBE3D8] hover:text-charcoal hover:border-champagne"
+                        }`}
+                        title={p.is_bestseller ? "Click to unmark from Hottest Picks" : "Click to mark as Hottest Pick"}
+                      >
+                        <span>🔥</span>
+                        <span>{p.is_bestseller ? "Hottest" : "Standard"}</span>
+                      </button>
                     </td>
 
                     {/* Visibility */}

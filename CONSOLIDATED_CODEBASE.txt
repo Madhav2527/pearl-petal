@@ -1,7 +1,7 @@
 // ==============================================================================
 // PETAL & PEARL — PRODUCTION-READY FULL REPOSITORY CODEBASE
 // Domain: https://thepearlpetals.in
-// Generated at: 2026-11-18T15:13:41.817Z
+// Generated at: 2026-11-19T12:32:47.691Z
 // ==============================================================================
 
 
@@ -1355,6 +1355,8 @@ export default function AdminProductsPage() {
   const [extractError, setExtractError] = useState("");
   const [quickCost, setQuickCost] = useState<number>(250);
   const [quickPrice, setQuickPrice] = useState<number>(350); // Auto +₹100
+  const [quickHottest, setQuickHottest] = useState<boolean>(false);
+  const [adminTableFilter, setAdminTableFilter] = useState<string>("all");
   const [extractedData, setExtractedData] = useState<{
     name: string;
     description: string;
@@ -1478,7 +1480,7 @@ export default function AdminProductsPage() {
         custom_markup: customMarkup !== 100 ? customMarkup : null,
         stock: 25,
         is_featured: true,
-        is_bestseller: false,
+        is_bestseller: quickHottest,
         is_new: true,
         is_visible: true,
         product_link: linkUrl.trim() || undefined,
@@ -1511,6 +1513,7 @@ export default function AdminProductsPage() {
         setExtractedData(null);
         setLinkUrl("");
         setDirectImageUrl("");
+        setQuickHottest(false);
         loadProducts();
       } else {
         setExtractError(data.error || "Failed to publish product.");
@@ -1519,6 +1522,27 @@ export default function AdminProductsPage() {
       setExtractError("Network error while publishing product.");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleToggleHottest = async (product: Product) => {
+    try {
+      const updated = {
+        ...product,
+        is_bestseller: !product.is_bestseller,
+      };
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === product.id ? { ...p, is_bestseller: !p.is_bestseller } : p))
+        );
+      }
+    } catch {
+      alert("Failed to update product.");
     }
   };
 
@@ -1920,18 +1944,34 @@ export default function AdminProductsPage() {
                       }
                       className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
                     >
+                      <option value="claw-clips">Claw Clips (Hair Clips)</option>
+                      <option value="hair-bows">Hair Bows &amp; Ribbons</option>
+                      <option value="scrunchies">Silk Scrunchies</option>
                       <option value="earrings">Earrings</option>
-                      <option value="necklaces">Necklaces</option>
-                      <option value="bracelets">Bracelets</option>
+                      <option value="necklaces">Necklaces &amp; Chokers</option>
+                      <option value="bracelets">Bracelets &amp; Bangles</option>
                       <option value="rings">Rings</option>
-                      <option value="claw-clips">Claw Clips</option>
-                      <option value="scrunchies">Scrunchies</option>
-                      <option value="hair-bows">Hair Bows</option>
-                      <option value="phone-charms">Phone Charms</option>
-                      <option value="pouches">Pouches</option>
+                      <option value="phone-charms">Phone Charms &amp; Straps</option>
+                      <option value="pouches">Pouches &amp; Bags</option>
                       <option value="gift-sets">Gift Sets</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Hottest Pick Toggle in Quick Add */}
+                <div className="bg-white/80 border border-champagne p-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={quickHottest}
+                      onChange={(e) => setQuickHottest(e.target.checked)}
+                      className="accent-charcoal rounded-none w-4 h-4 cursor-pointer"
+                    />
+                    <span className="text-xs text-charcoal font-medium font-sans flex items-center gap-1.5">
+                      <span>🔥 Feature in &quot;Hottest Picks&quot; Collection</span>
+                      <span className="text-[10px] text-taupe font-normal">(Displays in Hottest Picks section on Homepage &amp; Shop)</span>
+                    </span>
+                  </label>
                 </div>
 
                 {/* Dynamic Pricing Engine Calculation Card */}
@@ -2037,14 +2077,85 @@ export default function AdminProductsPage() {
       {/* EXISTING PRODUCT CATALOGUE TABLE                                          */}
       {/* ========================================================================= */}
       <div className="bg-white border border-[#EBE3D8] shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-[#EBE3D8] flex items-center justify-between">
-          <h3 className="font-serif text-lg text-charcoal">
-            All Storefront Products ({products.length})
-          </h3>
+        <div className="p-4 border-b border-[#EBE3D8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-serif text-lg text-charcoal">
+              All Storefront Products ({products.length})
+            </h3>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("all")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "all"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                All ({products.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("hottest")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all flex items-center gap-1 ${
+                  adminTableFilter === "hottest"
+                    ? "bg-[#2D2A26] text-[#FAF8F5] border-[#2D2A26] font-medium shadow-xs"
+                    : "bg-white text-[#C2714F] border-champagne hover:border-charcoal font-medium"
+                }`}
+              >
+                <span>🔥 Hottest Picks</span>
+                <span>({products.filter((p) => p.is_bestseller).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("hair-accessories")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "hair-accessories"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Hair Clips ({products.filter((p) => p.category === "hair-accessories").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("jewellery")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "jewellery"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Jewellery ({products.filter((p) => p.category === "jewellery").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("everyday-essentials")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "everyday-essentials"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Everyday ({products.filter((p) => p.category === "everyday-essentials").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("gifts")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "gifts"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Gifts ({products.filter((p) => p.category === "gifts").length})
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             onClick={loadProducts}
-            className="text-xs text-taupe hover:text-charcoal flex items-center gap-1 font-sans"
+            className="text-xs text-taupe hover:text-charcoal flex items-center gap-1 font-sans shrink-0"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Refresh</span>
@@ -2060,6 +2171,7 @@ export default function AdminProductsPage() {
                 <th className="p-4">Supplier Cost</th>
                 <th className="p-4">Selling Price</th>
                 <th className="p-4">Stock</th>
+                <th className="p-4">Hottest Pick</th>
                 <th className="p-4">Visibility</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -2067,18 +2179,24 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-[#EBE3D8]/60 text-charcoal">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-taupe">
+                  <td colSpan={8} className="p-8 text-center text-taupe">
                     Loading catalogue...
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-taupe">
+                  <td colSpan={8} className="p-8 text-center text-taupe">
                     No products found. Add your first piece using the link importer above.
                   </td>
                 </tr>
               ) : (
-                products.map((p) => (
+                products
+                  .filter((p) => {
+                    if (adminTableFilter === "hottest") return p.is_bestseller;
+                    if (adminTableFilter !== "all") return p.category === adminTableFilter;
+                    return true;
+                  })
+                  .map((p) => (
                   <tr key={p.id} className="hover:bg-[#FAF8F5] transition-colors">
                     
                     {/* Item Image & Title */}
@@ -2127,7 +2245,7 @@ export default function AdminProductsPage() {
                     <td className="p-4">
                       <span className="capitalize">{p.category.replace("-", " ")}</span>
                       <span className="text-[10px] text-taupe block capitalize">
-                        {p.subcategory.replace("-", " ")}
+                        {p.subcategory === "claw-clips" ? "Claw Clip (Hair Clip)" : p.subcategory.replace("-", " ")}
                       </span>
                     </td>
 
@@ -2157,6 +2275,23 @@ export default function AdminProductsPage() {
                       >
                         {p.stock} in stock
                       </span>
+                    </td>
+
+                    {/* Hottest Pick 1-Click Toggle */}
+                    <td className="p-4">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleHottest(p)}
+                        className={`px-2.5 py-1 text-[11px] font-sans transition-all inline-flex items-center gap-1 border ${
+                          p.is_bestseller
+                            ? "bg-[#2D2A26] text-[#FAF8F5] border-[#2D2A26] font-medium shadow-xs"
+                            : "bg-white text-taupe border-[#EBE3D8] hover:text-charcoal hover:border-champagne"
+                        }`}
+                        title={p.is_bestseller ? "Click to unmark from Hottest Picks" : "Click to mark as Hottest Pick"}
+                      >
+                        <span>🔥</span>
+                        <span>{p.is_bestseller ? "Hottest" : "Standard"}</span>
+                      </button>
                     </td>
 
                     {/* Visibility */}
@@ -2965,38 +3100,67 @@ function cleanTitleFromUrl(urlStr: string): string {
 function detectCategoryFromText(text: string): { category: "jewellery" | "hair-accessories" | "everyday-essentials" | "gifts"; subcategory: string } {
   const lower = text.toLowerCase();
   
-  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk")) {
+  // Hair Accessories (Claw clips, hair clips, barrettes, pins, scrunchies, ribbons, hair bows)
+  if (
+    lower.includes("claw") ||
+    lower.includes("hair clip") ||
+    lower.includes("hairclip") ||
+    lower.includes("clip") ||
+    lower.includes("jaw clip") ||
+    lower.includes("hair pin") ||
+    lower.includes("hairpin") ||
+    lower.includes("banana clip") ||
+    lower.includes("alligator clip") ||
+    lower.includes("barrette") ||
+    lower.includes("snap clip")
+  ) {
+    return { category: "hair-accessories", subcategory: "claw-clips" };
+  }
+  if (
+    lower.includes("scrunchie") ||
+    lower.includes("scrunchy") ||
+    lower.includes("hair tie") ||
+    lower.includes("rubber band")
+  ) {
+    return { category: "hair-accessories", subcategory: "scrunchies" };
+  }
+  if (
+    lower.includes("bow") ||
+    lower.includes("ribbon") ||
+    lower.includes("headband") ||
+    lower.includes("hairband")
+  ) {
+    return { category: "hair-accessories", subcategory: "hair-bows" };
+  }
+
+  // Jewellery
+  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk") || lower.includes("drop earring")) {
     return { category: "jewellery", subcategory: "earrings" };
   }
-  if (lower.includes("necklace") || lower.includes("choker") || lower.includes("chain") || lower.includes("pendant")) {
+  if (lower.includes("necklace") || lower.includes("choker") || lower.includes("chain") || lower.includes("pendant") || lower.includes("locket")) {
     return { category: "jewellery", subcategory: "necklaces" };
   }
-  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("anklet") || lower.includes("cuff")) {
+  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("anklet") || lower.includes("cuff") || lower.includes("wristband")) {
     return { category: "jewellery", subcategory: "bracelets" };
   }
   if (lower.includes("ring") || lower.includes("band")) {
     return { category: "jewellery", subcategory: "rings" };
   }
-  if (lower.includes("claw") || lower.includes("clip") || lower.includes("jaw")) {
-    return { category: "hair-accessories", subcategory: "claw-clips" };
-  }
-  if (lower.includes("scrunchie") || lower.includes("scrunchy")) {
-    return { category: "hair-accessories", subcategory: "scrunchies" };
-  }
-  if (lower.includes("bow") || lower.includes("ribbon") || lower.includes("barrette") || lower.includes("headband")) {
-    return { category: "hair-accessories", subcategory: "hair-bows" };
-  }
-  if (lower.includes("phone") || lower.includes("charm") || lower.includes("strap")) {
+
+  // Everyday Essentials
+  if (lower.includes("phone") || lower.includes("charm") || lower.includes("strap") || lower.includes("lanyard") || lower.includes("keychain")) {
     return { category: "everyday-essentials", subcategory: "phone-charms" };
   }
-  if (lower.includes("pouch") || lower.includes("case") || lower.includes("organizer") || lower.includes("bag")) {
+  if (lower.includes("pouch") || lower.includes("case") || lower.includes("organizer") || lower.includes("vanity") || lower.includes("tote")) {
     return { category: "everyday-essentials", subcategory: "pouches" };
   }
-  if (lower.includes("gift") || lower.includes("set") || lower.includes("hamper") || lower.includes("box")) {
+
+  // Gifts
+  if (lower.includes("gift") || lower.includes("set") || lower.includes("hamper") || lower.includes("box") || lower.includes("combo")) {
     return { category: "gifts", subcategory: "gift-sets" };
   }
 
-  return { category: "jewellery", subcategory: "earrings" };
+  return { category: "hair-accessories", subcategory: "claw-clips" };
 }
 
 export async function POST(req: Request) {
@@ -4052,10 +4216,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   }, [slug]);
 
   const [selectedSub, setSelectedSub] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("featured");
+  const [onlyHottest, setOnlyHottest] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>("relevance");
 
   const filtered = useMemo(() => {
     let result = [...allProducts];
+    if (onlyHottest) {
+      result = result.filter((p) => p.is_bestseller);
+    }
     if (selectedSub !== "all") {
       result = result.filter((p) => p.subcategory === selectedSub);
     }
@@ -4066,15 +4234,28 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       case "price-desc":
         result.sort((a, b) => b.selling_price - a.selling_price);
         break;
+      case "hottest":
+        result.sort((a, b) => (b.is_bestseller ? 1 : 0) - (a.is_bestseller ? 1 : 0));
+        break;
       case "newest":
         result.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0));
         break;
+      case "alpha":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "relevance":
       default:
-        result.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        result.sort((a, b) => {
+          const scoreB = (b.is_bestseller ? 4 : 0) + (b.is_featured ? 2 : 0) + (b.is_new ? 1 : 0);
+          const scoreA = (a.is_bestseller ? 4 : 0) + (a.is_featured ? 2 : 0) + (a.is_new ? 1 : 0);
+          return scoreB - scoreA;
+        });
         break;
     }
     return result;
-  }, [allProducts, selectedSub, sortBy]);
+  }, [allProducts, selectedSub, onlyHottest, sortBy]);
+
+  const hottestCount = allProducts.filter((p) => p.is_bestseller).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
@@ -4108,29 +4289,60 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() => setSelectedSub("all")}
-            className={`px-4 py-2 text-xs uppercase tracking-wider font-sans transition-all ${
-              selectedSub === "all"
+            onClick={() => {
+              setSelectedSub("all");
+              setOnlyHottest(false);
+            }}
+            className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all ${
+              selectedSub === "all" && !onlyHottest
                 ? "bg-charcoal text-white font-medium"
                 : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
             }`}
           >
-            All {categoryMeta.name}
+            All {categoryMeta.name} ({allProducts.length})
           </button>
-          {categoryMeta.subcategories.map((sub) => (
+
+          {hottestCount > 0 && (
             <button
-              key={sub.id}
               type="button"
-              onClick={() => setSelectedSub(sub.id)}
-              className={`px-4 py-2 text-xs uppercase tracking-wider font-sans transition-all ${
-                selectedSub === sub.id
-                  ? "bg-charcoal text-white font-medium"
-                  : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+              onClick={() => setOnlyHottest(!onlyHottest)}
+              className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1 ${
+                onlyHottest
+                  ? "bg-[#2D2A26] text-[#FAF8F5] font-medium shadow-sm"
+                  : "bg-[#FAF7F2] border border-champagne text-[#C2714F] hover:border-charcoal font-medium"
               }`}
             >
-              {sub.name}
+              <span>🔥 Hottest Picks</span>
+              <span className="text-[10px] opacity-80">({hottestCount})</span>
             </button>
-          ))}
+          )}
+
+          {categoryMeta.subcategories.map((sub) => {
+            const count = allProducts.filter((p) => p.subcategory === sub.id).length;
+            const isSelected = selectedSub === sub.id;
+            return (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSub(sub.id);
+                  setOnlyHottest(false);
+                }}
+                className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1 ${
+                  isSelected
+                    ? "bg-charcoal text-white font-medium"
+                    : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                }`}
+              >
+                <span>{sub.name}</span>
+                {count > 0 && (
+                  <span className={`text-[10px] ${isSelected ? "opacity-80" : "text-taupe"}`}>
+                    ({count})
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Sort */}
@@ -4141,10 +4353,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-transparent text-charcoal text-xs uppercase tracking-wider focus:outline-none cursor-pointer"
           >
-            <option value="featured">Featured First</option>
+            <option value="relevance">Relevance &bull; Curated</option>
+            <option value="price-asc">Price: Low to High (₹)</option>
+            <option value="price-desc">Price: High to Low (₹)</option>
+            <option value="hottest">🔥 Hottest Picks First</option>
             <option value="newest">New Arrivals</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+            <option value="alpha">Alphabetical (A - Z)</option>
           </select>
         </div>
 
@@ -5522,8 +5736,14 @@ export default function HomePage() {
     }
   };
 
-  const featured = allProducts.filter((p) => p.is_featured).slice(0, 4);
-  const bestsellers = allProducts.filter((p) => p.is_bestseller).slice(0, 4);
+  const [activeTab, setActiveTab] = useState<string>("all");
+
+  const hottestPicks = allProducts.filter((p) => p.is_bestseller);
+  const hairProducts = allProducts.filter((p) => p.category === "hair-accessories");
+  const jewelleryProducts = allProducts.filter((p) => p.category === "jewellery");
+  const essentialsProducts = allProducts.filter((p) => p.category === "everyday-essentials");
+  const giftProducts = allProducts.filter((p) => p.category === "gifts");
+  const featured = allProducts.filter((p) => p.is_featured);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
@@ -5729,63 +5949,291 @@ export default function HomePage() {
       {/* 4. DYNAMIC PRODUCTS OR GEN-Z DROP INCOMING PREVIEW BANNER                 */}
       {/* ========================================================================= */}
       {allProducts.length > 0 ? (
-        <>
-          {/* Active Featured Pieces */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-10 pb-4 border-b border-[#EBE3D8]">
+        <div className="space-y-16 sm:space-y-24">
+          
+          {/* Section Navigation Tabs */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-6 border-b border-[#EBE3D8]">
               <div>
-                <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                  Curated Drop
+                <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block mb-1">
+                  Curated Catalog &bull; {allProducts.length} Handcrafted Pieces
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                  Featured Boutique Keepsakes
+                  Shop By Section &amp; Department
                 </h2>
               </div>
-              <Link
-                href="/shop"
-                className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-              >
-                <span>View All ({allProducts.length})</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-              {featured.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {/* Department Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("all")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all ${
+                    activeTab === "all"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  All Sections
+                </button>
+                {hottestPicks.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("hottest")}
+                    className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                      activeTab === "hottest"
+                        ? "bg-[#2D2A26] text-[#FAF8F5] font-medium shadow-sm"
+                        : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                    }`}
+                  >
+                    <span>🔥 Hottest Picks</span>
+                    <span className="text-[10px] opacity-75">({hottestPicks.length})</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("hair")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                    activeTab === "hair"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  <span>🎀 Hair Clips &amp; Bows</span>
+                  {hairProducts.length > 0 && (
+                    <span className="text-[10px] opacity-75">({hairProducts.length})</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("jewellery")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                    activeTab === "jewellery"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  <span>✨ Jewellery &amp; Pearls</span>
+                  {jewelleryProducts.length > 0 && (
+                    <span className="text-[10px] opacity-75">({jewelleryProducts.length})</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("essentials")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                    activeTab === "essentials"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  <span>🤍 Everyday Charms</span>
+                  {essentialsProducts.length > 0 && (
+                    <span className="text-[10px] opacity-75">({essentialsProducts.length})</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("gifts")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                    activeTab === "gifts"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  <span>🎁 Gifts</span>
+                  {giftProducts.length > 0 && (
+                    <span className="text-[10px] opacity-75">({giftProducts.length})</span>
+                  )}
+                </button>
+              </div>
             </div>
-          </section>
+          </div>
 
-          {/* Bestsellers if available */}
-          {bestsellers.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between mb-10 pb-4 border-b border-[#EBE3D8]">
+          {/* Section 1: 🔥 Hottest Picks */}
+          {(activeTab === "all" || activeTab === "hottest") && hottestPicks.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
                 <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Most Loved
-                  </span>
-                  <h2 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Viral on The Feed
-                  </h2>
+                  <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[#C2714F] font-sans font-medium mb-1">
+                    <span>🔥 The Viral Edit &bull; High Demand</span>
+                  </div>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    Hottest Picks
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Our most viral accessories, hand-picked for your feed.
+                  </p>
                 </div>
                 <Link
-                  href="/shop"
+                  href="/shop?filter=hottest"
                   className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
                 >
-                  <span>Explore All</span>
+                  <span>View All Hottest Picks ({hottestPicks.length})</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {bestsellers.map((product) => (
+                {hottestPicks.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             </section>
           )}
-        </>
+
+          {/* Section 2: 🎀 Hair Clips & Hair Adornments */}
+          {(activeTab === "all" || activeTab === "hair") && hairProducts.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
+                    Italian Cellulose &bull; Mulberry Silk &bull; Effortless Updos
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    Hair Clips &amp; Hair Adornments
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Chic Italian cellulose claw clips, double-faced French velvet ribbons, and mulberry silk scrunchies.
+                  </p>
+                </div>
+                <Link
+                  href="/category/hair-accessories"
+                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
+                >
+                  <span>Explore Hair Clips ({hairProducts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                {hairProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Section 3: ✨ Jewellery & Pearl Atelier */}
+          {(activeTab === "all" || activeTab === "jewellery") && jewelleryProducts.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
+                    Real Baroque Pearls &bull; 18k Vermeil &bull; Waterproof
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    Jewellery &amp; Pearl Atelier
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Sculpted freshwater baroque drops and delicate gold chains you can wear anywhere.
+                  </p>
+                </div>
+                <Link
+                  href="/category/jewellery"
+                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
+                >
+                  <span>Explore Jewellery ({jewelleryProducts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                {jewelleryProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Section 4: 🤍 Everyday Charms & Little Treasures */}
+          {(activeTab === "all" || activeTab === "essentials") && essentialsProducts.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
+                    Hand-Beaded Straps &bull; Vanity Keepsakes
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    Everyday Charms &amp; Essentials
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Beaded phone charms and organic cotton pouches to elevate your daily aesthetic.
+                  </p>
+                </div>
+                <Link
+                  href="/category/everyday-essentials"
+                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
+                >
+                  <span>Explore Essentials ({essentialsProducts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                {essentialsProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Section 5: 🎁 Curated Gifts */}
+          {(activeTab === "all" || activeTab === "gifts") && giftProducts.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
+                    Rigid Drawer Box &bull; Wax Sealed Note &bull; Ready To Gift
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    Curated Gift Sets &amp; Keepsakes
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Thoughtfully combined accessories presented in our signature embossed unboxing packaging.
+                  </p>
+                </div>
+                <Link
+                  href="/category/gifts"
+                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
+                >
+                  <span>Explore Gifts ({giftProducts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                {giftProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Empty filtered tab message */}
+          {((activeTab === "hottest" && hottestPicks.length === 0) ||
+            (activeTab === "hair" && hairProducts.length === 0) ||
+            (activeTab === "jewellery" && jewelleryProducts.length === 0) ||
+            (activeTab === "essentials" && essentialsProducts.length === 0) ||
+            (activeTab === "gifts" && giftProducts.length === 0)) && (
+            <div className="max-w-md mx-auto text-center py-12 px-6 bg-ivory/50 border border-champagne space-y-3">
+              <span className="text-xs uppercase tracking-widest text-taupe font-sans block">
+                ✦ Department In Curation
+              </span>
+              <p className="font-serif text-lg text-charcoal">
+                New pieces for this section are arriving in the next drop.
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("all")}
+                className="btn-boutique-secondary text-xs py-2 px-4 inline-block"
+              >
+                View All Available Items
+              </button>
+            </div>
+          )}
+
+        </div>
       ) : (
         /* Empty Product Slate: Gen-Z Drop 01 Incoming Vault Showcase */
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -6214,13 +6662,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     ? product.images
     : [{ id: "fallback", image_url: "", alt_text: product.name, display_order: 1 }];
 
-  // Find related products in same category
-  const relatedProducts = getPublicProducts({ category: product.category })
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4);
+  const [relatedProducts, setRelatedProducts] = useState<PublicProduct[]>([]);
 
-  const currentPrice = selectedVariant?.price_override ?? product.selling_price;
-  const currentStock = selectedVariant ? selectedVariant.stock : product.stock;
+  useEffect(() => {
+    if (product) {
+      fetch(`/api/products?category=${encodeURIComponent(product.category)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.products && Array.isArray(data.products)) {
+            setRelatedProducts(data.products.filter((p: PublicProduct) => p.id !== product.id).slice(0, 4));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [product]);
+
+  const currentPrice = selectedVariant?.price_override ?? product?.selling_price ?? 0;
+  const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock ?? 0);
 
   const handleAddToBag = () => {
     if (currentStock <= 0) return;
@@ -6307,13 +6765,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-1.5">
               {product.is_bestseller && (
-                <span className="bg-charcoal text-ivory text-[10px] uppercase tracking-widest px-3 py-1 font-sans font-medium">
-                  Boutique Bestseller
+                <span className="bg-[#2D2A26] text-[#FAF8F5] text-[10px] uppercase tracking-wider px-3 py-1 font-sans font-semibold shadow-sm">
+                  🔥 Hottest Pick
                 </span>
               )}
               {product.is_new && !product.is_bestseller && (
                 <span className="bg-ivory text-charcoal text-[10px] uppercase tracking-widest px-3 py-1 font-sans font-medium border border-champagne">
-                  New Arrival
+                  ✦ New Drop
                 </span>
               )}
             </div>
@@ -6897,53 +7355,100 @@ export default function ShippingPolicyPage() {
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
-import { getPublicProducts } from "@/lib/public-catalog";
-import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { PublicProduct } from "@/lib/types";
+import { ArrowUpDown, Filter, Sparkles, X } from "lucide-react";
 
-export default function ShopAllPage() {
-  const [allProducts, setAllProducts] = useState(getPublicProducts());
+function ShopContent() {
+  const searchParams = useSearchParams();
+  const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
+
+  // Filter state
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("relevance");
+  const [onlyInStock, setOnlyInStock] = useState<boolean>(false);
+
+  // Sync initial query params
+  useEffect(() => {
+    const filterParam = searchParams.get("filter");
+    const categoryParam = searchParams.get("category");
+    const subcategoryParam = searchParams.get("subcategory");
+    const sortParam = searchParams.get("sort");
+
+    if (filterParam === "hottest") {
+      setActiveFilter("hottest");
+    } else if (subcategoryParam) {
+      setActiveFilter(`sub:${subcategoryParam}`);
+    } else if (categoryParam) {
+      setActiveFilter(`cat:${categoryParam}`);
+    }
+
+    if (sortParam) {
+      setSortBy(sortParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+        if (data?.products && Array.isArray(data.products)) {
           setAllProducts(data.products);
         }
       })
       .catch(() => {});
   }, []);
-  
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("featured");
-  const [onlyInStock, setOnlyInStock] = useState<boolean>(false);
 
-  const categories = [
-    { label: "All Items", value: "all" },
-    { label: "Jewellery", value: "jewellery" },
-    { label: "Hair Accessories", value: "hair-accessories" },
-    { label: "Everyday Essentials", value: "everyday-essentials" },
-    { label: "Gifts", value: "gifts" },
+  // Compute counts for pills
+  const counts = useMemo(() => {
+    return {
+      all: allProducts.length,
+      hottest: allProducts.filter((p) => p.is_bestseller).length,
+      clawClips: allProducts.filter((p) => p.subcategory === "claw-clips").length,
+      hairBows: allProducts.filter((p) => p.subcategory === "hair-bows").length,
+      scrunchies: allProducts.filter((p) => p.subcategory === "scrunchies").length,
+      earrings: allProducts.filter((p) => p.subcategory === "earrings").length,
+      necklaces: allProducts.filter((p) => p.subcategory === "necklaces").length,
+      braceletsRings: allProducts.filter((p) => p.category === "jewellery" && (p.subcategory === "bracelets" || p.subcategory === "rings")).length,
+      everyday: allProducts.filter((p) => p.category === "everyday-essentials").length,
+      gifts: allProducts.filter((p) => p.category === "gifts").length,
+    };
+  }, [allProducts]);
+
+  const filterOptions = [
+    { id: "all", label: "All Items", count: counts.all },
+    { id: "hottest", label: "🔥 Hottest Picks", count: counts.hottest, isHighlight: true },
+    { id: "sub:claw-clips", label: "Claw Clips", count: counts.clawClips },
+    { id: "sub:hair-bows", label: "Hair Bows", count: counts.hairBows },
+    { id: "sub:scrunchies", label: "Scrunchies", count: counts.scrunchies },
+    { id: "sub:earrings", label: "Earrings", count: counts.earrings },
+    { id: "sub:necklaces", label: "Necklaces", count: counts.necklaces },
+    { id: "cat:jewellery", label: "All Jewellery", count: counts.earrings + counts.necklaces + counts.braceletsRings },
+    { id: "cat:everyday-essentials", label: "Everyday Charms", count: counts.everyday },
+    { id: "cat:gifts", label: "Gift Sets", count: counts.gifts },
   ];
 
   const filteredProducts = useMemo(() => {
     let result = [...allProducts];
 
-    if (selectedCategory !== "all") {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-
-    if (selectedSubcategory !== "all") {
-      result = result.filter((p) => p.subcategory === selectedSubcategory);
+    // Apply Active Filter
+    if (activeFilter === "hottest") {
+      result = result.filter((p) => p.is_bestseller);
+    } else if (activeFilter.startsWith("sub:")) {
+      const sub = activeFilter.replace("sub:", "");
+      result = result.filter((p) => p.subcategory === sub);
+    } else if (activeFilter.startsWith("cat:")) {
+      const cat = activeFilter.replace("cat:", "");
+      result = result.filter((p) => p.category === cat);
     }
 
     if (onlyInStock) {
       result = result.filter((p) => p.stock > 0);
     }
 
+    // Sorting
     switch (sortBy) {
       case "price-asc":
         result.sort((a, b) => a.selling_price - b.selling_price);
@@ -6951,20 +7456,33 @@ export default function ShopAllPage() {
       case "price-desc":
         result.sort((a, b) => b.selling_price - a.selling_price);
         break;
+      case "hottest":
+        result.sort((a, b) => (b.is_bestseller ? 1 : 0) - (a.is_bestseller ? 1 : 0));
+        break;
       case "newest":
         result.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0));
         break;
-      case "featured":
+      case "alpha":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "relevance":
       default:
-        result.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        // Smart boutique relevance: Bestsellers -> Featured -> New
+        result.sort((a, b) => {
+          const scoreB = (b.is_bestseller ? 4 : 0) + (b.is_featured ? 2 : 0) + (b.is_new ? 1 : 0);
+          const scoreA = (a.is_bestseller ? 4 : 0) + (a.is_featured ? 2 : 0) + (a.is_new ? 1 : 0);
+          return scoreB - scoreA;
+        });
         break;
     }
 
     return result;
-  }, [allProducts, selectedCategory, selectedSubcategory, sortBy, onlyInStock]);
+  }, [allProducts, activeFilter, sortBy, onlyInStock]);
+
+  const activeFilterLabel = filterOptions.find((f) => f.id === activeFilter)?.label;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8">
       
       {/* Editorial Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
@@ -6980,79 +7498,104 @@ export default function ShopAllPage() {
       </div>
 
       {/* Filter and Sort Bar */}
-      <div className="border-y border-[#EBE3D8] py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="border-y border-[#EBE3D8] py-4 space-y-4">
         
-        {/* Category Pill Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.value}
-              type="button"
-              onClick={() => {
-                setSelectedCategory(cat.value);
-                setSelectedSubcategory("all");
-              }}
-              className={`px-4 py-2 text-xs uppercase tracking-wider font-sans transition-all ${
-                selectedCategory === cat.value
-                  ? "bg-charcoal text-white font-medium"
-                  : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        {/* Category & Section Pill Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {filterOptions.map((opt) => {
+            const isSelected = activeFilter === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setActiveFilter(opt.id)}
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? opt.isHighlight
+                      ? "bg-[#2D2A26] text-[#FAF8F5] font-medium shadow-sm"
+                      : "bg-charcoal text-white font-medium shadow-sm"
+                    : opt.isHighlight
+                    ? "bg-[#FAF7F2] border border-champagne text-[#C2714F] hover:border-charcoal font-medium"
+                    : "bg-white border border-[#EBE3D8] text-charcoal/75 hover:border-champagne hover:text-charcoal"
+                }`}
+              >
+                <span>{opt.label}</span>
+                {opt.count > 0 && (
+                  <span className={`text-[10px] ${isSelected ? "opacity-80" : "text-taupe"}`}>
+                    ({opt.count})
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Sort & Stock Controls */}
-        <div className="flex items-center gap-4 text-xs font-sans text-charcoal/80">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={onlyInStock}
-              onChange={(e) => setOnlyInStock(e.target.checked)}
-              className="accent-charcoal rounded-none w-3.5 h-3.5"
-            />
-            <span>In Stock Only</span>
-          </label>
-
-          <div className="flex items-center gap-1.5 border-l border-[#EBE3D8] pl-4">
-            <ArrowUpDown className="w-3.5 h-3.5 text-taupe" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-charcoal text-xs uppercase tracking-wider focus:outline-none cursor-pointer"
-            >
-              <option value="featured">Featured First</option>
-              <option value="newest">New Arrivals</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-            </select>
+        {/* Sort & Stock Controls Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-[#EBE3D8]/60 text-xs font-sans text-charcoal/80">
+          
+          {/* Active Filter Indicator */}
+          <div className="flex items-center gap-2">
+            <span>
+              Showing <span className="font-semibold text-charcoal">{filteredProducts.length}</span> pieces
+            </span>
+            {activeFilter !== "all" && (
+              <div className="flex items-center gap-1 bg-ivory px-2.5 py-1 border border-champagne text-[11px] text-charcoal">
+                <span>Filter: {activeFilterLabel}</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("all")}
+                  className="hover:text-taupe-dark ml-1"
+                  title="Clear filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Right Controls: In Stock & Sorting */}
+          <div className="flex items-center gap-5 w-full sm:w-auto justify-between sm:justify-end">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={onlyInStock}
+                onChange={(e) => setOnlyInStock(e.target.checked)}
+                className="accent-charcoal rounded-none w-3.5 h-3.5 cursor-pointer"
+              />
+              <span>In Stock Only</span>
+            </label>
+
+            <div className="flex items-center gap-2 border-l border-[#EBE3D8] pl-4">
+              <ArrowUpDown className="w-3.5 h-3.5 text-taupe" />
+              <label htmlFor="shop-sort" className="sr-only">
+                Sort products by
+              </label>
+              <select
+                id="shop-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-charcoal text-xs uppercase tracking-wider focus:outline-none cursor-pointer py-1"
+              >
+                <option value="relevance">Relevance &bull; Curated</option>
+                <option value="price-asc">Price: Low to High (₹)</option>
+                <option value="price-desc">Price: High to Low (₹)</option>
+                <option value="hottest">🔥 Hottest Picks First</option>
+                <option value="newest">New Arrivals</option>
+                <option value="alpha">Alphabetical (A - Z)</option>
+              </select>
+            </div>
+          </div>
+
         </div>
 
-      </div>
-
-      {/* Products Counter */}
-      <div className="flex justify-between items-center text-xs font-sans text-taupe">
-        <span>Showing {filteredProducts.length} handcrafted pieces</span>
-        {selectedCategory !== "all" && (
-          <button
-            onClick={() => {
-              setSelectedCategory("all");
-              setSelectedSubcategory("all");
-            }}
-            className="text-charcoal underline underline-offset-4 hover:text-taupe"
-          >
-            Clear Filters
-          </button>
-        )}
       </div>
 
       {/* Products Grid */}
       {allProducts.length === 0 ? (
         <div className="text-center py-20 bg-ivory/60 border border-champagne p-8 sm:p-14 space-y-6 max-w-2xl mx-auto shadow-sm">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-champagne text-[10px] uppercase tracking-widest text-charcoal font-sans">
-            ✦ DROP 01 CURATION IN PROGRESS
+            <Sparkles className="w-3.5 h-3.5 text-taupe-dark" />
+            <span>DROP 01 CURATION IN PROGRESS</span>
           </div>
           <h3 className="font-serif text-3xl sm:text-4xl text-charcoal">
             The Vault is Opening Soon
@@ -7071,20 +7614,19 @@ export default function ShopAllPage() {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="text-center py-20 bg-white border border-[#EBE3D8] p-8 space-y-4">
-          <SlidersHorizontal className="w-8 h-8 text-taupe mx-auto" />
-          <h3 className="font-serif text-2xl text-charcoal">No pieces found</h3>
+          <Filter className="w-8 h-8 text-taupe mx-auto" />
+          <h3 className="font-serif text-2xl text-charcoal">No pieces found in this view</h3>
           <p className="text-xs text-charcoal/60 font-sans max-w-sm mx-auto">
-            Try resetting your filters to explore our full boutique collection.
+            Try choosing a different section or resetting your active filters to explore our full boutique collection.
           </p>
           <button
             onClick={() => {
-              setSelectedCategory("all");
-              setSelectedSubcategory("all");
+              setActiveFilter("all");
               setOnlyInStock(false);
             }}
             className="btn-boutique-primary mt-2"
           >
-            Reset Filters
+            Show All Items
           </button>
         </div>
       ) : (
@@ -7096,6 +7638,20 @@ export default function ShopAllPage() {
       )}
 
     </div>
+  );
+}
+
+export default function ShopAllPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center text-taupe text-xs font-sans">
+          Loading boutique catalogue...
+        </div>
+      }
+    >
+      <ShopContent />
+    </Suspense>
   );
 }
 
@@ -7970,8 +8526,9 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Shop All", href: "/shop" },
+    { label: "🔥 Hottest Picks", href: "/shop?filter=hottest" },
+    { label: "Hair Clips", href: "/category/hair-accessories" },
     { label: "Jewellery", href: "/category/jewellery" },
-    { label: "Hair Accessories", href: "/category/hair-accessories" },
     { label: "Everyday Essentials", href: "/category/everyday-essentials" },
     { label: "Gifts", href: "/category/gifts" },
   ];
@@ -8198,13 +8755,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
           {product.is_bestseller && (
-            <span className="bg-charcoal text-ivory text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-medium">
-              Bestseller
+            <span className="bg-[#2D2A26] text-[#FAF8F5] text-[9px] uppercase tracking-wider px-2.5 py-1 font-sans font-semibold flex items-center gap-1 shadow-sm">
+              <span>🔥 Hottest Pick</span>
             </span>
           )}
           {product.is_new && !product.is_bestseller && (
             <span className="bg-ivory text-charcoal text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-medium border border-champagne">
-              New
+              ✦ New Drop
             </span>
           )}
           {product.stock <= 5 && product.stock > 0 && (
@@ -8234,7 +8791,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       <div className="p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
           <span className="text-[10px] uppercase tracking-widest text-taupe font-sans block mb-1">
-            {product.subcategory.replace("-", " ")}
+            {product.subcategory === "claw-clips"
+              ? "Claw Clip"
+              : product.subcategory === "hair-bows"
+              ? "Hair Bow"
+              : product.subcategory.replace("-", " ")}
           </span>
           <Link href={`/product/${product.slug}`} className="block">
             <h3 className="font-serif text-base sm:text-lg text-charcoal leading-snug line-clamp-1 hover:text-taupe transition-colors">
