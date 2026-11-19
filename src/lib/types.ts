@@ -5,20 +5,50 @@
 export type ProductCategory = 
   | "jewellery" 
   | "hair-accessories" 
+  | "press-on-nails"
   | "everyday-essentials" 
-  | "gifts";
+  | "bags-pouches"
+  | "eyewear"
+  | "beauty-vanity"
+  | "gifts"
+  | (string & {});
 
 export type ProductSubcategory = 
+  // Jewellery
   | "earrings" 
   | "necklaces" 
   | "bracelets" 
   | "rings" 
+  | "anklets"
+  | "body-jewellery"
+  // Hair Accessories
   | "claw-clips" 
-  | "scrunchies" 
+  | "hair-pins-clips"
   | "hair-bows" 
+  | "scrunchies" 
+  | "headbands"
+  // Press-On Nails & Nail Art
+  | "press-on-nails"
+  | "nail-art-stickers"
+  | "nail-accessories"
+  // Everyday Essentials & Charms
   | "phone-charms" 
+  | "keychains"
+  | "trinket-dishes"
+  // Bags & Pouches
   | "pouches" 
-  | "gift-sets";
+  | "mini-bags"
+  | "tote-bags"
+  // Eyewear
+  | "sunglasses"
+  | "sunglass-chains"
+  // Beauty & Vanity
+  | "compact-mirrors"
+  | "hair-brushes"
+  // Gifts
+  | "gift-sets"
+  | "keepsake-boxes"
+  | (string & {});
 
 export interface ProductVariant {
   id: string;

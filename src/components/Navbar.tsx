@@ -20,6 +20,7 @@ export default function Navbar() {
   const navLinks = [
     { label: "Shop All", href: "/shop" },
     { label: "🔥 Hottest Picks", href: "/shop?filter=hottest" },
+    { label: "Press-On Nails", href: "/category/press-on-nails" },
     { label: "Hair Clips", href: "/category/hair-accessories" },
     { label: "Jewellery", href: "/category/jewellery" },
     { label: "Everyday Essentials", href: "/category/everyday-essentials" },

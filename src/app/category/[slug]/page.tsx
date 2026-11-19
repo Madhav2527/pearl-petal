@@ -11,10 +11,15 @@ import { ArrowLeft, ArrowUpDown } from "lucide-react";
 export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
 
-  const categoryMeta = CATEGORIES_DATA.find((c) => c.slug === slug);
-  if (!categoryMeta) {
-    notFound();
-  }
+  const matched = CATEGORIES_DATA.find((c) => c.slug === slug);
+  const categoryMeta = matched || {
+    id: slug,
+    name: slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    slug: slug,
+    description: `Curated collection of boutique ${slug.replace(/-/g, " ")}.`,
+    image_url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80",
+    subcategories: [],
+  };
 
   const [allProducts, setAllProducts] = useState(() => getPublicProducts({ category: slug }));
 

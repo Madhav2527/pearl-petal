@@ -140,6 +140,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>("all");
 
   const hottestPicks = allProducts.filter((p) => p.is_bestseller);
+  const nailProducts = allProducts.filter((p) => p.category === "press-on-nails");
   const hairProducts = allProducts.filter((p) => p.category === "hair-accessories");
   const jewelleryProducts = allProducts.filter((p) => p.category === "jewellery");
   const essentialsProducts = allProducts.filter((p) => p.category === "everyday-essentials");
@@ -393,6 +394,20 @@ export default function HomePage() {
                 )}
                 <button
                   type="button"
+                  onClick={() => setActiveTab("nails")}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
+                    activeTab === "nails"
+                      ? "bg-charcoal text-white font-medium shadow-sm"
+                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
+                  }`}
+                >
+                  <span>💅 Press-On Nails</span>
+                  {nailProducts.length > 0 && (
+                    <span className="text-[10px] opacity-75">({nailProducts.length})</span>
+                  )}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveTab("hair")}
                   className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
                     activeTab === "hair"
@@ -611,8 +626,41 @@ export default function HomePage() {
             </section>
           )}
 
+          {/* Section 6: 💅 The Nail Bar & Press-On Nails */}
+          {(activeTab === "all" || activeTab === "nails") && nailProducts.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
+                    Reusable Press-Ons &bull; Salon Glaze &bull; Zero Damage
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
+                    The Nail Bar &amp; Press-On Nails
+                  </h3>
+                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
+                    Salon-quality reusable press-on nails, chrome French tips, and 3D nail charms for instant 10-minute manicures.
+                  </p>
+                </div>
+                <Link
+                  href="/category/press-on-nails"
+                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
+                >
+                  <span>Explore Nail Bar ({nailProducts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                {nailProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Empty filtered tab message */}
           {((activeTab === "hottest" && hottestPicks.length === 0) ||
+            (activeTab === "nails" && nailProducts.length === 0) ||
             (activeTab === "hair" && hairProducts.length === 0) ||
             (activeTab === "jewellery" && jewelleryProducts.length === 0) ||
             (activeTab === "essentials" && essentialsProducts.length === 0) ||

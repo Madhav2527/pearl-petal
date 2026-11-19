@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 
 const CATEGORY_STUDIO_IMAGES: Record<string, string> = {
+  "press-on-nails": "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=800&q=80",
+  "nail-art-stickers": "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80",
+  "nail-accessories": "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=800&q=80",
   earrings: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80",
   necklaces: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
   bracelets: "https://images.unsplash.com/photo-1611591475870-761214041724?auto=format&fit=crop&w=800&q=80",
   rings: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80",
+  anklets: "https://images.unsplash.com/photo-1611591475870-761214041724?auto=format&fit=crop&w=800&q=80",
   "claw-clips": "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80",
+  "hair-pins-clips": "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80",
   scrunchies: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
   "hair-bows": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+  headbands: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=800&q=80",
   "phone-charms": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80",
+  keychains: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80",
   pouches: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+  "mini-bags": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80",
+  sunglasses: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
+  "sunglass-chains": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
+  "compact-mirrors": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
   "gift-sets": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80",
 };
 
@@ -20,6 +31,7 @@ function isDirectImageUrl(urlStr: string): boolean {
     urlStr.includes("m.media-amazon.com/images") ||
     urlStr.includes("adn-static1.nykaa.com") ||
     urlStr.includes("assets.myntassets.com") ||
+    urlStr.includes("mfrcdn.com") ||
     urlStr.includes("/media/catalog/product")
   );
 }
@@ -47,24 +59,99 @@ function cleanTitleFromUrl(urlStr: string): string {
   }
 }
 
-function detectCategoryFromText(text: string): { category: "jewellery" | "hair-accessories" | "everyday-essentials" | "gifts"; subcategory: string } {
+function detectCategoryFromText(text: string): { category: string; subcategory: string } {
   const lower = text.toLowerCase();
   
-  // Hair Accessories (Claw clips, hair clips, barrettes, pins, scrunchies, ribbons, hair bows)
+  // Press-On Nails & Nail Art (Highest priority for nail links like Savana, Urbanic, Nykaa)
+  if (
+    lower.includes("nail") ||
+    lower.includes("press-on") ||
+    lower.includes("press on") ||
+    lower.includes("artificial nail") ||
+    lower.includes("false nail") ||
+    lower.includes("fake nail") ||
+    lower.includes("manicure")
+  ) {
+    if (lower.includes("sticker") || lower.includes("decal")) {
+      return { category: "press-on-nails", subcategory: "nail-art-stickers" };
+    }
+    if (lower.includes("glue") || lower.includes("kit") || lower.includes("prep")) {
+      return { category: "press-on-nails", subcategory: "nail-accessories" };
+    }
+    return { category: "press-on-nails", subcategory: "press-on-nails" };
+  }
+
+  // Sunglasses & Eyewear
+  if (
+    lower.includes("sunglass") ||
+    lower.includes("shades") ||
+    lower.includes("eyewear") ||
+    lower.includes("goggles") ||
+    lower.includes("spectacle")
+  ) {
+    if (lower.includes("chain") || lower.includes("cord") || lower.includes("strap")) {
+      return { category: "eyewear", subcategory: "sunglass-chains" };
+    }
+    return { category: "eyewear", subcategory: "sunglasses" };
+  }
+
+  // Bags & Pouches
+  if (
+    lower.includes("vanity") ||
+    lower.includes("makeup bag") ||
+    lower.includes("cosmetic bag") ||
+    lower.includes("clutch") ||
+    lower.includes("tote") ||
+    lower.includes("shoulder bag") ||
+    lower.includes("handbag") ||
+    lower.includes("purse") ||
+    lower.includes("pouch")
+  ) {
+    if (lower.includes("tote")) {
+      return { category: "bags-pouches", subcategory: "tote-bags" };
+    }
+    if (lower.includes("shoulder") || lower.includes("mini bag") || lower.includes("handbag") || lower.includes("purse")) {
+      return { category: "bags-pouches", subcategory: "mini-bags" };
+    }
+    return { category: "bags-pouches", subcategory: "pouches" };
+  }
+
+  // Beauty & Vanity
+  if (lower.includes("mirror") || lower.includes("compact")) {
+    return { category: "beauty-vanity", subcategory: "compact-mirrors" };
+  }
+  if (lower.includes("brush") || lower.includes("comb")) {
+    return { category: "beauty-vanity", subcategory: "hair-brushes" };
+  }
+
+  // Hair Accessories (Claw clips, hair pins, bows, scrunchies, headbands)
+  if (
+    lower.includes("headband") ||
+    lower.includes("hairband") ||
+    lower.includes("bandeau") ||
+    lower.includes("alice band")
+  ) {
+    return { category: "hair-accessories", subcategory: "headbands" };
+  }
   if (
     lower.includes("claw") ||
     lower.includes("hair clip") ||
     lower.includes("hairclip") ||
-    lower.includes("clip") ||
     lower.includes("jaw clip") ||
-    lower.includes("hair pin") ||
-    lower.includes("hairpin") ||
     lower.includes("banana clip") ||
-    lower.includes("alligator clip") ||
-    lower.includes("barrette") ||
-    lower.includes("snap clip")
+    lower.includes("clip")
   ) {
     return { category: "hair-accessories", subcategory: "claw-clips" };
+  }
+  if (
+    lower.includes("hair pin") ||
+    lower.includes("hairpin") ||
+    lower.includes("alligator clip") ||
+    lower.includes("barrette") ||
+    lower.includes("snap clip") ||
+    lower.includes("bobby pin")
+  ) {
+    return { category: "hair-accessories", subcategory: "hair-pins-clips" };
   }
   if (
     lower.includes("scrunchie") ||
@@ -76,33 +163,37 @@ function detectCategoryFromText(text: string): { category: "jewellery" | "hair-a
   }
   if (
     lower.includes("bow") ||
-    lower.includes("ribbon") ||
-    lower.includes("headband") ||
-    lower.includes("hairband")
+    lower.includes("ribbon")
   ) {
     return { category: "hair-accessories", subcategory: "hair-bows" };
   }
 
   // Jewellery
-  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk") || lower.includes("drop earring")) {
+  if (lower.includes("anklet") || lower.includes("payal")) {
+    return { category: "jewellery", subcategory: "anklets" };
+  }
+  if (lower.includes("earring") || lower.includes("stud") || lower.includes("hoop") || lower.includes("jhumk") || lower.includes("huggie") || lower.includes("drop earring")) {
     return { category: "jewellery", subcategory: "earrings" };
   }
   if (lower.includes("necklace") || lower.includes("choker") || lower.includes("chain") || lower.includes("pendant") || lower.includes("locket")) {
     return { category: "jewellery", subcategory: "necklaces" };
   }
-  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("anklet") || lower.includes("cuff") || lower.includes("wristband")) {
+  if (lower.includes("bracelet") || lower.includes("bangle") || lower.includes("cuff") || lower.includes("wristband")) {
     return { category: "jewellery", subcategory: "bracelets" };
   }
   if (lower.includes("ring") || lower.includes("band")) {
     return { category: "jewellery", subcategory: "rings" };
+  }
+  if (lower.includes("waist chain") || lower.includes("body chain") || lower.includes("belly chain")) {
+    return { category: "jewellery", subcategory: "body-jewellery" };
   }
 
   // Everyday Essentials
   if (lower.includes("phone") || lower.includes("charm") || lower.includes("strap") || lower.includes("lanyard") || lower.includes("keychain")) {
     return { category: "everyday-essentials", subcategory: "phone-charms" };
   }
-  if (lower.includes("pouch") || lower.includes("case") || lower.includes("organizer") || lower.includes("vanity") || lower.includes("tote")) {
-    return { category: "everyday-essentials", subcategory: "pouches" };
+  if (lower.includes("trinket") || lower.includes("tray") || lower.includes("dish")) {
+    return { category: "everyday-essentials", subcategory: "trinket-dishes" };
   }
 
   // Gifts

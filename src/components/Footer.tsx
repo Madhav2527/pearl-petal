@@ -141,6 +141,7 @@ export default function Footer() {
             </h5>
             <ul className="space-y-2 text-xs font-sans text-charcoal/80">
               <li><Link href="/shop" className="hover:text-taupe transition-colors">Shop All</Link></li>
+              <li><Link href="/category/press-on-nails" className="hover:text-taupe transition-colors">Press-On Nails</Link></li>
               <li><Link href="/category/jewellery" className="hover:text-taupe transition-colors">Jewellery</Link></li>
               <li><Link href="/category/hair-accessories" className="hover:text-taupe transition-colors">Hair Accessories</Link></li>
               <li><Link href="/category/everyday-essentials" className="hover:text-taupe transition-colors">Everyday Essentials</Link></li>

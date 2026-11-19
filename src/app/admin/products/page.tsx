@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product, ProductCategory, ProductSubcategory } from "@/lib/types";
+import { CATEGORIES_DATA } from "@/data/seed-data";
 import {
   Plus,
   Edit2,
@@ -21,6 +22,11 @@ import {
 } from "lucide-react";
 import { calculateSellingPrice } from "@/lib/pricing-engine";
 
+const getCategorySubcategories = (catSlug: string) => {
+  const cat = CATEGORIES_DATA.find((c) => c.slug === catSlug);
+  return cat ? cat.subcategories : [];
+};
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +42,16 @@ export default function AdminProductsPage() {
   const [quickPrice, setQuickPrice] = useState<number>(350); // Auto +₹100
   const [quickHottest, setQuickHottest] = useState<boolean>(false);
   const [adminTableFilter, setAdminTableFilter] = useState<string>("all");
+  const [isCustomCategoryQuick, setIsCustomCategoryQuick] = useState(false);
+  const [customCategoryQuick, setCustomCategoryQuick] = useState("");
+  const [isCustomSubcategoryQuick, setIsCustomSubcategoryQuick] = useState(false);
+  const [customSubcategoryQuick, setCustomSubcategoryQuick] = useState("");
+
+  const [isCustomCategoryModal, setIsCustomCategoryModal] = useState(false);
+  const [customCategoryModal, setCustomCategoryModal] = useState("");
+  const [isCustomSubcategoryModal, setIsCustomSubcategoryModal] = useState(false);
+  const [customSubcategoryModal, setCustomSubcategoryModal] = useState("");
+
   const [extractedData, setExtractedData] = useState<{
     name: string;
     description: string;
@@ -119,6 +135,17 @@ export default function AdminProductsPage() {
 
       const json = await res.json();
       if (res.ok && json.data) {
+        const catSlug = json.data.category;
+        const subSlug = json.data.subcategory;
+        const isStandardCat = CATEGORIES_DATA.some((c) => c.slug === catSlug);
+        setIsCustomCategoryQuick(!isStandardCat);
+        setCustomCategoryQuick(!isStandardCat ? catSlug : "");
+
+        const subcats = getCategorySubcategories(catSlug);
+        const isStandardSub = subcats.some((s) => s.slug === subSlug);
+        setIsCustomSubcategoryQuick(!isStandardSub);
+        setCustomSubcategoryQuick(!isStandardSub ? subSlug : "");
+
         setExtractedData({
           name: json.data.name,
           description: json.data.description,
@@ -227,26 +254,39 @@ export default function AdminProductsPage() {
 
   const openAddModal = () => {
     setEditingProduct(null);
+    setIsCustomCategoryModal(false);
+    setCustomCategoryModal("");
+    setIsCustomSubcategoryModal(false);
+    setCustomSubcategoryModal("");
     setFormData({
       name: "",
-      category: "jewellery",
-      subcategory: "earrings",
+      category: "press-on-nails",
+      subcategory: "press-on-nails",
       description: "",
       supplier_cost: 250,
       custom_markup: null,
       stock: 20,
-      image_url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80",
+      image_url: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=800&q=80",
       is_featured: false,
       is_bestseller: false,
       is_new: true,
       is_visible: true,
-      tags: "pearl, handcrafted, boutique",
+      tags: "nails, press-on, handcrafted, boutique",
     });
     setModalOpen(true);
   };
 
   const openEditModal = (p: Product) => {
     setEditingProduct(p);
+    const isStandardCat = CATEGORIES_DATA.some((c) => c.slug === p.category);
+    setIsCustomCategoryModal(!isStandardCat);
+    setCustomCategoryModal(!isStandardCat ? p.category : "");
+
+    const subcats = getCategorySubcategories(p.category);
+    const isStandardSub = subcats.some((s) => s.slug === p.subcategory);
+    setIsCustomSubcategoryModal(!isStandardSub);
+    setCustomSubcategoryModal(!isStandardSub ? p.subcategory : "");
+
     setFormData({
       name: p.name,
       category: p.category,
@@ -534,34 +574,48 @@ export default function AdminProductsPage() {
                   <span className="text-[10px] uppercase tracking-wider text-taupe font-sans font-medium block">
                     Or Pick Studio Aesthetic Photo:
                   </span>
-                  <div className="grid grid-cols-2 gap-1.5 text-[10px] font-sans">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px] font-sans">
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
+                    >
+                      <span>💅 Glazed Nails</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80" })}
-                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
                     >
-                      ✦ Baroque Drops
+                      <span>✨ Baroque Drops</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80" })}
-                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
                     >
-                      ✦ Pearl Choker
+                      <span>✨ Pearl Choker</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80" })}
-                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
                     >
-                      ✦ Claw Clip
+                      <span>🎀 Claw Clip</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80" })}
-                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate"
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
                     >
-                      ✦ Velvet Bow
+                      <span>🎀 Velvet Bow</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtractedData({ ...extractedData, image_url: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80" })}
+                      className="p-1.5 border border-champagne bg-ivory/40 hover:bg-white text-charcoal text-left truncate flex items-center gap-1"
+                    >
+                      <span>🕶️ Aesthetic Shades</span>
                     </button>
                   </div>
                 </div>
@@ -590,50 +644,98 @@ export default function AdminProductsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
-                      Category
+                      Category *
                     </label>
                     <select
-                      value={extractedData.category}
-                      onChange={(e) =>
-                        setExtractedData({
-                          ...extractedData,
-                          category: e.target.value as ProductCategory,
-                        })
-                      }
+                      value={isCustomCategoryQuick ? "__custom__" : extractedData.category}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "__custom__") {
+                          setIsCustomCategoryQuick(true);
+                          const fallback = customCategoryQuick || "custom-category";
+                          setExtractedData({ ...extractedData, category: fallback as ProductCategory });
+                        } else {
+                          setIsCustomCategoryQuick(false);
+                          const subcats = getCategorySubcategories(val);
+                          const firstSub = subcats[0]?.slug || "general";
+                          setIsCustomSubcategoryQuick(false);
+                          setExtractedData({
+                            ...extractedData,
+                            category: val as ProductCategory,
+                            subcategory: firstSub as ProductSubcategory,
+                          });
+                        }
+                      }}
                       className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
                     >
-                      <option value="jewellery">Jewellery</option>
-                      <option value="hair-accessories">Hair Accessories</option>
-                      <option value="everyday-essentials">Everyday Essentials</option>
-                      <option value="gifts">Gifts</option>
+                      {CATEGORIES_DATA.map((cat) => (
+                        <option key={cat.slug} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))}
+                      <option value="__custom__">➕ + Add Custom Category...</option>
                     </select>
+
+                    {isCustomCategoryQuick && (
+                      <input
+                        type="text"
+                        value={customCategoryQuick}
+                        placeholder="Type custom category (e.g. Phone Cases, Brooches)..."
+                        onChange={(e) => {
+                          const typed = e.target.value;
+                          setCustomCategoryQuick(typed);
+                          const slug = typed.trim().toLowerCase().replace(/\s+/g, "-") || "custom-category";
+                          setExtractedData({ ...extractedData, category: slug as ProductCategory });
+                        }}
+                        className="w-full mt-1 bg-white border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal font-sans"
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-1">
                     <label className="block text-[10px] uppercase tracking-wider text-charcoal font-medium">
-                      Subcategory
+                      Subcategory *
                     </label>
                     <select
-                      value={extractedData.subcategory}
-                      onChange={(e) =>
-                        setExtractedData({
-                          ...extractedData,
-                          subcategory: e.target.value as ProductSubcategory,
-                        })
-                      }
+                      value={isCustomSubcategoryQuick ? "__custom__" : extractedData.subcategory}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "__custom__") {
+                          setIsCustomSubcategoryQuick(true);
+                          const fallback = customSubcategoryQuick || "custom-item";
+                          setExtractedData({ ...extractedData, subcategory: fallback as ProductSubcategory });
+                        } else {
+                          setIsCustomSubcategoryQuick(false);
+                          setExtractedData({
+                            ...extractedData,
+                            subcategory: val as ProductSubcategory,
+                          });
+                        }
+                      }}
                       className="w-full bg-ivory/30 border border-champagne p-2 text-xs text-charcoal focus:outline-none cursor-pointer"
                     >
-                      <option value="claw-clips">Claw Clips (Hair Clips)</option>
-                      <option value="hair-bows">Hair Bows &amp; Ribbons</option>
-                      <option value="scrunchies">Silk Scrunchies</option>
-                      <option value="earrings">Earrings</option>
-                      <option value="necklaces">Necklaces &amp; Chokers</option>
-                      <option value="bracelets">Bracelets &amp; Bangles</option>
-                      <option value="rings">Rings</option>
-                      <option value="phone-charms">Phone Charms &amp; Straps</option>
-                      <option value="pouches">Pouches &amp; Bags</option>
-                      <option value="gift-sets">Gift Sets</option>
+                      {getCategorySubcategories(extractedData.category).map((sub) => (
+                        <option key={sub.slug} value={sub.slug}>
+                          {sub.name}
+                        </option>
+                      ))}
+                      <option value="__custom__">➕ + Add Custom Subcategory...</option>
                     </select>
+
+                    {isCustomSubcategoryQuick && (
+                      <input
+                        type="text"
+                        value={customSubcategoryQuick}
+                        placeholder="Type custom subcategory (e.g. Nail Stickers, Hair Sticks)..."
+                        onChange={(e) => {
+                          const typed = e.target.value;
+                          setCustomSubcategoryQuick(typed);
+                          const slug = typed.trim().toLowerCase().replace(/\s+/g, "-") || "custom-item";
+                          setExtractedData({ ...extractedData, subcategory: slug as ProductSubcategory });
+                        }}
+                        className="w-full mt-1 bg-white border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal font-sans"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -787,6 +889,17 @@ export default function AdminProductsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setAdminTableFilter("press-on-nails")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "press-on-nails"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Press-On Nails ({products.filter((p) => p.category === "press-on-nails").length})
+              </button>
+              <button
+                type="button"
                 onClick={() => setAdminTableFilter("hair-accessories")}
                 className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
                   adminTableFilter === "hair-accessories"
@@ -817,6 +930,28 @@ export default function AdminProductsPage() {
                 }`}
               >
                 Everyday ({products.filter((p) => p.category === "everyday-essentials").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("bags-pouches")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "bags-pouches"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Bags ({products.filter((p) => p.category === "bags-pouches").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTableFilter("eyewear")}
+                className={`px-2.5 py-1 text-[11px] font-sans border transition-all ${
+                  adminTableFilter === "eyewear"
+                    ? "bg-charcoal text-white border-charcoal font-medium shadow-xs"
+                    : "bg-white text-charcoal/70 border-[#EBE3D8] hover:border-champagne"
+                }`}
+              >
+                Eyewear ({products.filter((p) => p.category === "eyewear").length})
               </button>
               <button
                 type="button"
@@ -1063,15 +1198,49 @@ export default function AdminProductsPage() {
                     Category *
                   </label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as ProductCategory })}
+                    value={isCustomCategoryModal ? "__custom__" : formData.category}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__custom__") {
+                        setIsCustomCategoryModal(true);
+                        const fallback = customCategoryModal || "custom-category";
+                        setFormData({ ...formData, category: fallback as ProductCategory });
+                      } else {
+                        setIsCustomCategoryModal(false);
+                        const subcats = getCategorySubcategories(val);
+                        const firstSub = subcats[0]?.slug || "general";
+                        setIsCustomSubcategoryModal(false);
+                        setFormData({
+                          ...formData,
+                          category: val as ProductCategory,
+                          subcategory: firstSub as ProductSubcategory,
+                        });
+                      }
+                    }}
                     className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal cursor-pointer"
                   >
-                    <option value="jewellery">Jewellery</option>
-                    <option value="hair-accessories">Hair Accessories</option>
-                    <option value="everyday-essentials">Everyday Essentials</option>
-                    <option value="gifts">Gifts</option>
+                    {CATEGORIES_DATA.map((cat) => (
+                      <option key={cat.slug} value={cat.slug}>
+                        {cat.name}
+                      </option>
+                    ))}
+                    <option value="__custom__">➕ + Add Custom Category...</option>
                   </select>
+
+                  {isCustomCategoryModal && (
+                    <input
+                      type="text"
+                      value={customCategoryModal}
+                      placeholder="Type custom category (e.g. Phone Cases, Brooches)..."
+                      onChange={(e) => {
+                        const typed = e.target.value;
+                        setCustomCategoryModal(typed);
+                        const slug = typed.trim().toLowerCase().replace(/\s+/g, "-") || "custom-category";
+                        setFormData({ ...formData, category: slug as ProductCategory });
+                      }}
+                      className="w-full mt-1 bg-white border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal font-sans"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -1079,21 +1248,45 @@ export default function AdminProductsPage() {
                     Subcategory *
                   </label>
                   <select
-                    value={formData.subcategory}
-                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value as ProductSubcategory })}
+                    value={isCustomSubcategoryModal ? "__custom__" : formData.subcategory}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__custom__") {
+                        setIsCustomSubcategoryModal(true);
+                        const fallback = customSubcategoryModal || "custom-item";
+                        setFormData({ ...formData, subcategory: fallback as ProductSubcategory });
+                      } else {
+                        setIsCustomSubcategoryModal(false);
+                        setFormData({
+                          ...formData,
+                          subcategory: val as ProductSubcategory,
+                        });
+                      }
+                    }}
                     className="w-full bg-ivory/30 border border-champagne p-2.5 text-xs text-charcoal focus:outline-none focus:border-charcoal cursor-pointer"
                   >
-                    <option value="earrings">Earrings</option>
-                    <option value="necklaces">Necklaces</option>
-                    <option value="bracelets">Bracelets</option>
-                    <option value="rings">Rings</option>
-                    <option value="claw-clips">Claw Clips</option>
-                    <option value="scrunchies">Scrunchies</option>
-                    <option value="hair-bows">Hair Bows</option>
-                    <option value="phone-charms">Phone Charms</option>
-                    <option value="pouches">Pouches</option>
-                    <option value="gift-sets">Gift Sets</option>
+                    {getCategorySubcategories(formData.category).map((sub) => (
+                      <option key={sub.slug} value={sub.slug}>
+                        {sub.name}
+                      </option>
+                    ))}
+                    <option value="__custom__">➕ + Add Custom Subcategory...</option>
                   </select>
+
+                  {isCustomSubcategoryModal && (
+                    <input
+                      type="text"
+                      value={customSubcategoryModal}
+                      placeholder="Type custom subcategory (e.g. Nail Stickers, Hair Sticks)..."
+                      onChange={(e) => {
+                        const typed = e.target.value;
+                        setCustomSubcategoryModal(typed);
+                        const slug = typed.trim().toLowerCase().replace(/\s+/g, "-") || "custom-item";
+                        setFormData({ ...formData, subcategory: slug as ProductSubcategory });
+                      }}
+                      className="w-full mt-1 bg-white border border-champagne p-2 text-xs text-charcoal focus:outline-none focus:border-charcoal font-sans"
+                    />
+                  )}
                 </div>
 
                 {/* PRICING ENGINE CALCULATION BOX */}

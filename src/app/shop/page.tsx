@@ -51,6 +51,7 @@ function ShopContent() {
     return {
       all: allProducts.length,
       hottest: allProducts.filter((p) => p.is_bestseller).length,
+      nails: allProducts.filter((p) => p.category === "press-on-nails").length,
       clawClips: allProducts.filter((p) => p.subcategory === "claw-clips").length,
       hairBows: allProducts.filter((p) => p.subcategory === "hair-bows").length,
       scrunchies: allProducts.filter((p) => p.subcategory === "scrunchies").length,
@@ -65,6 +66,7 @@ function ShopContent() {
   const filterOptions = [
     { id: "all", label: "All Items", count: counts.all },
     { id: "hottest", label: "🔥 Hottest Picks", count: counts.hottest, isHighlight: true },
+    { id: "cat:press-on-nails", label: "💅 Press-On Nails", count: counts.nails },
     { id: "sub:claw-clips", label: "Claw Clips", count: counts.clawClips },
     { id: "sub:hair-bows", label: "Hair Bows", count: counts.hairBows },
     { id: "sub:scrunchies", label: "Scrunchies", count: counts.scrunchies },

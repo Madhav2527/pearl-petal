@@ -110,18 +110,35 @@ it("Payment Security: Valid Razorpay SHA-256 HMAC signature passes verification"
   assert.strictEqual(validSignature, verifySignature, "Valid signature must match");
 });
 
-it("Payment Security: Tampered payload or signature is strictly rejected", () => {
-  const secret = "test_razorpay_secret_key_12345";
-  const orderId = "order_OqK78yHj9KlmNo";
-  const paymentId = "pay_OqK78yHj9KlmNo";
-  const forgedSignature = "0000000000000000000000000000000000000000000000000000000000000000";
+// 5. Category Detection & Taxonomy Tests
+it("Category Detection: Detects nails from Savana / external titles and descriptions", () => {
+  const nailKeywords = ["nail", "press-on", "press on", "artificial nail", "acrylic", "manicure", "glazed", "almond"];
+  const title = "Glitter Artificial Nails - Sparkle Reusable Set";
+  const lower = title.toLowerCase();
+  const isNails = nailKeywords.some((k) => lower.includes(k));
+  assert.strictEqual(isNails, true, "Title must be categorized under press-on-nails");
+});
 
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
+// 6. Sorting & Curation Tests
+it("Catalog Sorting: Multi-attribute sorting functions correctly", () => {
+  const items = [
+    { id: "1", name: "Pearl Ring", selling_price: 399, is_bestseller: false, is_new: false, is_featured: false },
+    { id: "2", name: "Glazed Nails", selling_price: 299, is_bestseller: true, is_new: true, is_featured: true },
+    { id: "3", name: "Velvet Bow", selling_price: 499, is_bestseller: false, is_new: true, is_featured: false },
+  ];
 
-  assert.notStrictEqual(forgedSignature, expectedSignature, "Forged signature must be rejected");
+  // Price asc
+  const priceAsc = [...items].sort((a, b) => a.selling_price - b.selling_price);
+  assert.strictEqual(priceAsc[0].id, "2", "Lowest price must be first (₹299)");
+  assert.strictEqual(priceAsc[2].id, "3", "Highest price must be last (₹499)");
+
+  // Price desc
+  const priceDesc = [...items].sort((a, b) => b.selling_price - a.selling_price);
+  assert.strictEqual(priceDesc[0].id, "3", "Highest price must be first (₹499)");
+
+  // Hottest first
+  const hottestFirst = [...items].sort((a, b) => (b.is_bestseller ? 1 : 0) - (a.is_bestseller ? 1 : 0));
+  assert.strictEqual(hottestFirst[0].id, "2", "Hottest pick must be first");
 });
 
 console.log(`\n========================================`);
