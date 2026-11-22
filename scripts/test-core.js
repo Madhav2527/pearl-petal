@@ -24,11 +24,11 @@ function it(name, fn) {
 }
 
 // 1. Pricing Engine Tests
-it("Pricing Rule: Default ₹100 markup (Supplier Cost ₹250 -> Selling Price ₹350)", () => {
-  const defaultMarkup = 100;
+it("Pricing Rule: Default ₹50 markup (Supplier Cost ₹250 -> Selling Price ₹300)", () => {
+  const defaultMarkup = 50;
   const supplierCost = 250;
   const sellingPrice = Math.round(supplierCost + defaultMarkup);
-  assert.strictEqual(sellingPrice, 350, "Selling price must be exactly ₹350");
+  assert.strictEqual(sellingPrice, 300, "Selling price must be exactly ₹300");
 });
 
 it("Pricing Rule: Configurable Custom Markup (Supplier Cost ₹250 + Markup ₹150 -> Selling Price ₹400)", () => {

@@ -1,11 +1,11 @@
 // ==============================================================================
 // PETAL & PEARL — PRICING & CONTRIBUTION ENGINE
 // Domain: https://thepearlpetals.in
-// Rule: Selling Price = Supplier Cost + Markup (Default ₹100)
+// Rule: Selling Price = Supplier Cost + Markup (Default ₹50)
 // ==============================================================================
 
 export interface PricingSettings {
-  defaultMarkup: number; // default ₹100
+  defaultMarkup: number; // default ₹50
   freeShippingThreshold: number; // default ₹999
   flatShippingFee: number; // default ₹99
   paymentGatewayFeePercent: number; // default 2% for Razorpay
@@ -13,7 +13,7 @@ export interface PricingSettings {
 }
 
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
-  defaultMarkup: 100,
+  defaultMarkup: 50,
   freeShippingThreshold: 999,
   flatShippingFee: 99,
   paymentGatewayFeePercent: 0.02, // 2%
@@ -25,7 +25,7 @@ export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
  * Selling price = supplierCost + markup
  *
  * @param supplierCost The verified unit cost charged by the authorized supplier
- * @param customMarkup Optional specific markup; defaults to DEFAULT_PRICING_SETTINGS.defaultMarkup (₹100)
+ * @param customMarkup Optional specific markup; defaults to DEFAULT_PRICING_SETTINGS.defaultMarkup (₹50)
  * @returns sellingPrice (number)
  */
 export function calculateSellingPrice(supplierCost: number, customMarkup?: number | null): number {

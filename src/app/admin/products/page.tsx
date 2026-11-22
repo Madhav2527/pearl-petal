@@ -39,7 +39,7 @@ export default function AdminProductsPage() {
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState("");
   const [quickCost, setQuickCost] = useState<number>(250);
-  const [quickPrice, setQuickPrice] = useState<number>(350); // Auto +₹100
+  const [quickPrice, setQuickPrice] = useState<number>(300); // Auto +₹50
   const [quickHottest, setQuickHottest] = useState<boolean>(false);
   const [adminTableFilter, setAdminTableFilter] = useState<string>("all");
   const [isCustomCategoryQuick, setIsCustomCategoryQuick] = useState(false);
@@ -105,10 +105,10 @@ export default function AdminProductsPage() {
     loadProducts();
   }, []);
 
-  // Update quick price automatically when supplier cost changes (+₹100 rule)
+  // Update quick price automatically when supplier cost changes (+₹50 rule)
   const handleCostChange = (newCost: number) => {
     setQuickCost(newCost);
-    setQuickPrice(newCost + 100);
+    setQuickPrice(newCost + 50);
   };
 
   // Handle URL Link Extraction
@@ -183,7 +183,7 @@ export default function AdminProductsPage() {
         subcategory: extractedData.subcategory,
         description: extractedData.description,
         supplier_cost: Number(quickCost),
-        custom_markup: customMarkup !== 100 ? customMarkup : null,
+        custom_markup: customMarkup !== 50 ? customMarkup : null,
         stock: 25,
         is_featured: true,
         is_bestseller: quickHottest,
@@ -398,7 +398,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* ⚡ FEATURE: QUICK ADD BY PRODUCT LINK (AUTO +₹100 & INSTANT PUBLISH)       */}
+      {/* ⚡ FEATURE: QUICK ADD BY PRODUCT LINK (AUTO +₹50 & INSTANT PUBLISH)        */}
       {/* ========================================================================= */}
       <div className="bg-gradient-to-br from-white via-ivory/30 to-[#FAF6F0] border-2 border-champagne p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-champagne/60 pb-4">
@@ -418,7 +418,7 @@ export default function AdminProductsPage() {
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium font-sans">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Dynamic +₹100 Markup Engine Active
+            Dynamic +₹50 Markup Engine Active
           </span>
         </div>
 
@@ -760,7 +760,7 @@ export default function AdminProductsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] uppercase tracking-wider font-semibold text-charcoal flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-taupe-dark" />
-                      Dynamic Pricing Engine: Selling Price = Cost + ₹100
+                      Dynamic Pricing Engine: Selling Price = Cost + ₹50
                     </span>
                     <span className="text-[10px] text-emerald-800 font-mono font-medium">
                       Margin: ₹{quickPrice - quickCost}
@@ -796,7 +796,7 @@ export default function AdminProductsPage() {
                         className="w-full bg-white border border-champagne p-2.5 text-sm font-semibold font-mono text-emerald-800 focus:outline-none focus:border-charcoal"
                       />
                       <span className="text-[9px] text-emerald-700 block">
-                        Default: Cost (₹{quickCost}) + ₹100 = ₹{quickCost + 100}
+                        Default: Cost (₹{quickCost}) + ₹50 = ₹{quickCost + 50}
                       </span>
                     </div>
                   </div>
