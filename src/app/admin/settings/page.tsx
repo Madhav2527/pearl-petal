@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Sparkles, Check, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function AdminSettingsPage() {
-  const [markup, setMarkup] = useState(100);
+  const [markup, setMarkup] = useState(50);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(999);
   const [flatShippingFee, setFlatShippingFee] = useState(99);
   const [announcement, setAnnouncement] = useState(

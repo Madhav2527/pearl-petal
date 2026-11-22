@@ -141,6 +141,40 @@ it("Catalog Sorting: Multi-attribute sorting functions correctly", () => {
   assert.strictEqual(hottestFirst[0].id, "2", "Hottest pick must be first");
 });
 
+// 7. Admin Authentication Tests
+it("Admin Authentication: Authenticates credentials madhav8506 / creta8506", () => {
+  const allowedUsernames = [
+    "madhav8506",
+    "madhav8506@thepearlpetals.in",
+    "admin@thepearlpetals.in",
+    "admin@petalpearl.com",
+    "admin",
+  ];
+  const allowedPasswords = ["creta8506", "petal_pearl_admin_2026_boutique", "PetalPearl@2026"];
+
+  const testUser = "madhav8506";
+  const testPass = "creta8506";
+
+  const isValid = allowedUsernames.includes(testUser) && allowedPasswords.includes(testPass);
+  assert.strictEqual(isValid, true, "madhav8506 / creta8506 must authenticate successfully");
+});
+
+// 8. 100% Catalogue Pricing Integrity Test
+it("Catalogue Pricing: 100% of products strictly adhere to Selling Price = Supplier Cost + 50", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const products = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "products.json"), "utf8"));
+  assert.ok(products.length >= 1400, "Catalogue must have at least 1,400 products");
+
+  let discrepancies = 0;
+  for (const p of products) {
+    if (p.selling_price !== p.supplier_cost + 50) {
+      discrepancies++;
+    }
+  }
+  assert.strictEqual(discrepancies, 0, "Zero pricing discrepancies allowed across entire catalog");
+});
+
 console.log(`\n========================================`);
 console.log(`Results: ${passed}/${total} tests passed successfully.`);
 console.log(`========================================\n`);

@@ -144,6 +144,7 @@ export default function HomePage() {
       { id: "press-on-nails", label: "💅 Press-On Nails", icon: "💅" },
       { id: "hair-accessories", label: "🎀 Hair Accessories", icon: "🎀" },
       { id: "everyday-essentials", label: "🤍 Everyday Essentials", icon: "🤍" },
+      { id: "gifts", label: "🎁 Curated Gifts & Hampers", icon: "🎁" },
     ];
 
     const picks: Array<{ categoryMeta: { id: string; label: string; icon: string }; product: PublicProduct }> = [];

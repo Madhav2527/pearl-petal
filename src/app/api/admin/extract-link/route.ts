@@ -196,8 +196,24 @@ function detectCategoryFromText(text: string): { category: string; subcategory: 
     return { category: "everyday-essentials", subcategory: "trinket-dishes" };
   }
 
-  // Gifts
-  if (lower.includes("gift") || lower.includes("set") || lower.includes("hamper") || lower.includes("box") || lower.includes("combo")) {
+  // Gifts & Keepsakes
+  if (
+    lower.includes("keepsake") ||
+    lower.includes("jewelry box") ||
+    lower.includes("jewellery box") ||
+    lower.includes("makeup box") ||
+    lower.includes("storage box") ||
+    lower.includes("organizer box")
+  ) {
+    return { category: "gifts", subcategory: "keepsake-boxes" };
+  }
+  if (
+    lower.includes("gift") ||
+    lower.includes("hamper") ||
+    lower.includes("set") ||
+    lower.includes("combo") ||
+    lower.includes("bundle")
+  ) {
     return { category: "gifts", subcategory: "gift-sets" };
   }
 

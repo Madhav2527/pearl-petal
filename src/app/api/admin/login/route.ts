@@ -5,10 +5,16 @@ export async function POST(req: Request) {
     const { email, password } = await req.json();
     const adminKey = process.env.ADMIN_SECRET_KEY || "petal_pearl_admin_2026_boutique";
 
-    // Valid admin credentials check
+    // Valid admin credentials check (User: madhav8506 / creta8506)
     const isValid =
-      (email === "admin@thepearlpetals.in" || email === "admin@petalpearl.com" || email === "admin") &&
-      (password === adminKey || password === "PetalPearl@2026");
+      (email === "madhav8506" ||
+        email === "madhav8506@thepearlpetals.in" ||
+        email === "admin@thepearlpetals.in" ||
+        email === "admin@petalpearl.com" ||
+        email === "admin") &&
+      (password === "creta8506" ||
+        password === adminKey ||
+        password === "PetalPearl@2026");
 
     if (!isValid) {
       return NextResponse.json({ error: "Invalid administrator credentials." }, { status: 401 });

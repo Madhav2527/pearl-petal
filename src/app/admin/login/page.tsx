@@ -7,8 +7,8 @@ import { Lock, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@thepearlpetals.in");
-  const [password, setPassword] = useState("PetalPearl@2026");
+  const [email, setEmail] = useState("madhav8506");
+  const [password, setPassword] = useState("creta8506");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -64,14 +64,14 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLogin} className="space-y-4 text-xs font-sans">
           <div className="space-y-1">
             <label className="block text-charcoal font-medium uppercase tracking-wider">
-              Administrator Email
+              Administrator ID / Email
             </label>
             <input
               type="text"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@thepearlpetals.in"
+              placeholder="madhav8506"
               className="w-full bg-ivory/30 border border-champagne p-3 text-xs text-charcoal focus:outline-none focus:border-charcoal"
             />
           </div>
