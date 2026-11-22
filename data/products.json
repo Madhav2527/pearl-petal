@@ -33715,8 +33715,8 @@
     "selling_price": 264,
     "custom_markup": null,
     "stock": 25,
-    "is_featured": false,
-    "is_bestseller": false,
+    "is_featured": true,
+    "is_bestseller": true,
     "is_new": true,
     "is_visible": true,
     "images": [

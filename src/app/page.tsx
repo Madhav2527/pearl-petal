@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -137,15 +137,45 @@ export default function HomePage() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState<string>("all");
+  // Exactly one standout hottest pick per category for the homepage
+  const categoryHottestPicks = useMemo(() => {
+    const categoryDefs = [
+      { id: "jewellery", label: "✨ Jewellery & Pearls", icon: "✨" },
+      { id: "press-on-nails", label: "💅 Press-On Nails", icon: "💅" },
+      { id: "hair-accessories", label: "🎀 Hair Accessories", icon: "🎀" },
+      { id: "everyday-essentials", label: "🤍 Everyday Essentials", icon: "🤍" },
+    ];
 
-  const hottestPicks = allProducts.filter((p) => p.is_bestseller);
-  const nailProducts = allProducts.filter((p) => p.category === "press-on-nails");
-  const hairProducts = allProducts.filter((p) => p.category === "hair-accessories");
-  const jewelleryProducts = allProducts.filter((p) => p.category === "jewellery");
-  const essentialsProducts = allProducts.filter((p) => p.category === "everyday-essentials");
-  const giftProducts = allProducts.filter((p) => p.category === "gifts");
-  const featured = allProducts.filter((p) => p.is_featured);
+    const picks: Array<{ categoryMeta: { id: string; label: string; icon: string }; product: PublicProduct }> = [];
+    const seenCats = new Set<string>();
+
+    for (const cat of categoryDefs) {
+      const product =
+        allProducts.find((p) => p.category === cat.id && p.is_bestseller) ||
+        allProducts.find((p) => p.category === cat.id);
+      if (product) {
+        picks.push({ categoryMeta: cat, product });
+        seenCats.add(cat.id);
+      }
+    }
+
+    // Include 1 from any other category (e.g. gifts) if present
+    for (const p of allProducts) {
+      if (p.is_bestseller && !seenCats.has(p.category)) {
+        picks.push({
+          categoryMeta: {
+            id: p.category,
+            label: p.category.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+            icon: "✦",
+          },
+          product: p,
+        });
+        seenCats.add(p.category);
+      }
+    }
+
+    return picks;
+  }, [allProducts]);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
@@ -348,341 +378,55 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. DYNAMIC PRODUCTS OR GEN-Z DROP INCOMING PREVIEW BANNER                 */}
+      {/* 4. THE VIRAL EDIT: 1 HOTTEST PICK PER CATEGORY                            */}
       {/* ========================================================================= */}
-      {allProducts.length > 0 ? (
-        <div className="space-y-16 sm:space-y-24">
-          
-          {/* Section Navigation Tabs */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-6 border-b border-[#EBE3D8]">
-              <div>
-                <span className="text-xs uppercase tracking-[0.25em] text-taupe font-sans block mb-1">
-                  Curated Catalog &bull; {allProducts.length} Handcrafted Pieces
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                  Shop By Section &amp; Department
-                </h2>
+      {categoryHottestPicks.length > 0 ? (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between pb-6 border-b border-[#EBE3D8]">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[#C2714F] font-sans font-medium mb-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#C2714F]" />
+                <span>The Viral Edit &bull; One Standout Pick Per Department</span>
               </div>
-
-              {/* Department Pills */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("all")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all ${
-                    activeTab === "all"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  All Sections
-                </button>
-                {hottestPicks.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("hottest")}
-                    className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                      activeTab === "hottest"
-                        ? "bg-[#2D2A26] text-[#FAF8F5] font-medium shadow-sm"
-                        : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                    }`}
-                  >
-                    <span>🔥 Hottest Picks</span>
-                    <span className="text-[10px] opacity-75">({hottestPicks.length})</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("nails")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                    activeTab === "nails"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  <span>💅 Press-On Nails</span>
-                  {nailProducts.length > 0 && (
-                    <span className="text-[10px] opacity-75">({nailProducts.length})</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("hair")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                    activeTab === "hair"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  <span>🎀 Hair Clips &amp; Bows</span>
-                  {hairProducts.length > 0 && (
-                    <span className="text-[10px] opacity-75">({hairProducts.length})</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("jewellery")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                    activeTab === "jewellery"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  <span>✨ Jewellery &amp; Pearls</span>
-                  {jewelleryProducts.length > 0 && (
-                    <span className="text-[10px] opacity-75">({jewelleryProducts.length})</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("essentials")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                    activeTab === "essentials"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  <span>🤍 Everyday Charms</span>
-                  {essentialsProducts.length > 0 && (
-                    <span className="text-[10px] opacity-75">({essentialsProducts.length})</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("gifts")}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-sans transition-all flex items-center gap-1.5 ${
-                    activeTab === "gifts"
-                      ? "bg-charcoal text-white font-medium shadow-sm"
-                      : "bg-white border border-[#EBE3D8] text-charcoal/70 hover:border-champagne hover:text-charcoal"
-                  }`}
-                >
-                  <span>🎁 Gifts</span>
-                  {giftProducts.length > 0 && (
-                    <span className="text-[10px] opacity-75">({giftProducts.length})</span>
-                  )}
-                </button>
-              </div>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal">
+                Hottest Picks of the Season
+              </h2>
+              <p className="text-xs sm:text-sm text-charcoal/70 font-sans font-light mt-1">
+                Our single most viral hero piece from each category, curated for your feed.
+              </p>
             </div>
+            <Link
+              href="/shop?filter=hottest"
+              className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-2 mt-4 sm:mt-0 transition-colors border-b border-charcoal/30 pb-0.5 hover:border-charcoal"
+            >
+              <span>View All Hottest Picks</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          {/* Section 1: 🔥 Hottest Picks */}
-          {(activeTab === "all" || activeTab === "hottest") && hottestPicks.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[#C2714F] font-sans font-medium mb-1">
-                    <span>🔥 The Viral Edit &bull; High Demand</span>
-                  </div>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Hottest Picks
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Our most viral accessories, hand-picked for your feed.
-                  </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+            {categoryHottestPicks.map(({ categoryMeta, product }) => (
+              <div key={product.id} className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-taupe-dark font-sans px-1">
+                  <span>{categoryMeta.label}</span>
+                  <span className="text-[10px] text-[#C2714F] font-medium">★ Top Pick</span>
                 </div>
-                <Link
-                  href="/shop?filter=hottest"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>View All Hottest Picks ({hottestPicks.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <ProductCard product={product} />
               </div>
+            ))}
+          </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {hottestPicks.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Section 2: 🎀 Hair Clips & Hair Adornments */}
-          {(activeTab === "all" || activeTab === "hair") && hairProducts.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Italian Cellulose &bull; Mulberry Silk &bull; Effortless Updos
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Hair Clips &amp; Hair Adornments
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Chic Italian cellulose claw clips, double-faced French velvet ribbons, and mulberry silk scrunchies.
-                  </p>
-                </div>
-                <Link
-                  href="/category/hair-accessories"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>Explore Hair Clips ({hairProducts.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {hairProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Section 3: ✨ Jewellery & Pearl Atelier */}
-          {(activeTab === "all" || activeTab === "jewellery") && jewelleryProducts.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Real Baroque Pearls &bull; 18k Vermeil &bull; Waterproof
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Jewellery &amp; Pearl Atelier
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Sculpted freshwater baroque drops and delicate gold chains you can wear anywhere.
-                  </p>
-                </div>
-                <Link
-                  href="/category/jewellery"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>Explore Jewellery ({jewelleryProducts.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {jewelleryProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Section 4: 🤍 Everyday Charms & Little Treasures */}
-          {(activeTab === "all" || activeTab === "essentials") && essentialsProducts.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Hand-Beaded Straps &bull; Vanity Keepsakes
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Everyday Charms &amp; Essentials
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Beaded phone charms and organic cotton pouches to elevate your daily aesthetic.
-                  </p>
-                </div>
-                <Link
-                  href="/category/everyday-essentials"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>Explore Essentials ({essentialsProducts.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {essentialsProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Section 5: 🎁 Curated Gifts */}
-          {(activeTab === "all" || activeTab === "gifts") && giftProducts.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Rigid Drawer Box &bull; Wax Sealed Note &bull; Ready To Gift
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    Curated Gift Sets &amp; Keepsakes
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Thoughtfully combined accessories presented in our signature embossed unboxing packaging.
-                  </p>
-                </div>
-                <Link
-                  href="/category/gifts"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>Explore Gifts ({giftProducts.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {giftProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Section 6: 💅 The Nail Bar & Press-On Nails */}
-          {(activeTab === "all" || activeTab === "nails") && nailProducts.length > 0 && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-[#EBE3D8]">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.2em] text-taupe font-sans block mb-1">
-                    Reusable Press-Ons &bull; Salon Glaze &bull; Zero Damage
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-charcoal">
-                    The Nail Bar &amp; Press-On Nails
-                  </h3>
-                  <p className="text-xs text-charcoal/70 font-sans font-light mt-1">
-                    Salon-quality reusable press-on nails, chrome French tips, and 3D nail charms for instant 10-minute manicures.
-                  </p>
-                </div>
-                <Link
-                  href="/category/press-on-nails"
-                  className="text-xs uppercase tracking-widest font-sans text-charcoal hover:text-taupe flex items-center gap-1.5 mt-3 sm:mt-0 transition-colors"
-                >
-                  <span>Explore Nail Bar ({nailProducts.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                {nailProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Empty filtered tab message */}
-          {((activeTab === "hottest" && hottestPicks.length === 0) ||
-            (activeTab === "nails" && nailProducts.length === 0) ||
-            (activeTab === "hair" && hairProducts.length === 0) ||
-            (activeTab === "jewellery" && jewelleryProducts.length === 0) ||
-            (activeTab === "essentials" && essentialsProducts.length === 0) ||
-            (activeTab === "gifts" && giftProducts.length === 0)) && (
-            <div className="max-w-md mx-auto text-center py-12 px-6 bg-ivory/50 border border-champagne space-y-3">
-              <span className="text-xs uppercase tracking-widest text-taupe font-sans block">
-                ✦ Department In Curation
-              </span>
-              <p className="font-serif text-lg text-charcoal">
-                New pieces for this section are arriving in the next drop.
-              </p>
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
-                className="btn-boutique-secondary text-xs py-2 px-4 inline-block"
-              >
-                View All Available Items
-              </button>
-            </div>
-          )}
-
-        </div>
+          {/* Explore full boutique vault CTA */}
+          <div className="pt-6 text-center border-t border-[#EBE3D8]">
+            <Link
+              href="/shop"
+              className="btn-boutique-primary inline-flex items-center gap-2 px-8 py-4 text-xs tracking-widest uppercase font-sans shadow-sm"
+            >
+              <span>Explore The Full Boutique Vault ({allProducts.length}+ Pieces)</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
       ) : (
         /* Empty Product Slate: Gen-Z Drop 01 Incoming Vault Showcase */
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
