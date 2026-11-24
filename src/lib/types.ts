@@ -154,6 +154,10 @@ export interface Order {
   tracking_url?: string;
   actual_shipping_cost?: number;
   refund_status?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
+  payment_method?: string;
   created_at: string;
   updated_at: string;
 }

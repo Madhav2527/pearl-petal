@@ -47,10 +47,24 @@ export async function POST(req: Request) {
       }
     }
 
-    // Update order status to Paid
+    // Prevent duplicate processing if already verified
+    if (order.status === "paid" || order.payment_status === "paid") {
+      return NextResponse.json({
+        success: true,
+        orderNumber,
+        status: "paid",
+        message: "Order already confirmed and payment processed.",
+      });
+    }
+
+    // Update order status to Paid and persist Razorpay transaction references
     updateOrderStatusAdmin({
       orderNumber,
       status: "paid",
+      paymentStatus: "paid",
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
     });
 
     return NextResponse.json({

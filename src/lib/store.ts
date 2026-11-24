@@ -276,6 +276,11 @@ export function getAllOrdersAdmin(): Order[] {
 export function updateOrderStatusAdmin(params: {
   orderNumber: string;
   status: OrderStatus;
+  paymentStatus?: "unpaid" | "paid" | "failed" | "refunded";
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  paymentMethod?: string;
   supplierOrderRef?: string;
   trackingNumber?: string;
   courierPartner?: string;
@@ -285,14 +290,32 @@ export function updateOrderStatusAdmin(params: {
   if (idx === -1) return null;
 
   const current = memoryOrders[idx];
+  const newPaymentStatus =
+    params.paymentStatus || (params.status === "paid" ? "paid" : current.payment_status);
+
   const updated: Order = {
     ...current,
     status: params.status,
-    supplier_order_ref: params.supplierOrderRef !== undefined ? params.supplierOrderRef : current.supplier_order_ref,
-    tracking_number: params.trackingNumber !== undefined ? params.trackingNumber : current.tracking_number,
-    courier_partner: params.courierPartner !== undefined ? params.courierPartner : current.courier_partner,
-    actual_shipping_cost: params.actualShippingCost !== undefined ? params.actualShippingCost : current.actual_shipping_cost,
-    tracking_url: params.trackingNumber ? `https://track.thepearlpetals.in/${params.trackingNumber}` : current.tracking_url,
+    payment_status: newPaymentStatus,
+    razorpay_order_id:
+      params.razorpayOrderId !== undefined ? params.razorpayOrderId : current.razorpay_order_id,
+    razorpay_payment_id:
+      params.razorpayPaymentId !== undefined ? params.razorpayPaymentId : current.razorpay_payment_id,
+    razorpay_signature:
+      params.razorpaySignature !== undefined ? params.razorpaySignature : current.razorpay_signature,
+    payment_method:
+      params.paymentMethod !== undefined ? params.paymentMethod : current.payment_method,
+    supplier_order_ref:
+      params.supplierOrderRef !== undefined ? params.supplierOrderRef : current.supplier_order_ref,
+    tracking_number:
+      params.trackingNumber !== undefined ? params.trackingNumber : current.tracking_number,
+    courier_partner:
+      params.courierPartner !== undefined ? params.courierPartner : current.courier_partner,
+    actual_shipping_cost:
+      params.actualShippingCost !== undefined ? params.actualShippingCost : current.actual_shipping_cost,
+    tracking_url: params.trackingNumber
+      ? `https://track.thepearlpetals.in/${params.trackingNumber}`
+      : current.tracking_url,
     updated_at: new Date().toISOString(),
   };
 

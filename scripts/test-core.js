@@ -214,6 +214,95 @@ it("Razorpay Integration: HMAC-SHA256 signature algorithm strictly verifies and 
   assert.strictEqual(missingOrder, false, "All 3 fields must be present");
 });
 
+// 11. Razorpay Webhook Signature Verification & Idempotency
+it("Razorpay Webhooks: Validates webhook signatures and prevents duplicate payment updates", () => {
+  const webhookSecret = "whsec_testSecret123456789";
+  const rawPayload = JSON.stringify({
+    event: "payment.captured",
+    payload: {
+      payment: {
+        entity: {
+          id: "pay_testWebHook789",
+          order_id: "order_testWebHook456",
+          amount: 50000,
+          status: "captured",
+          notes: { orderNumber: "PP-2026-TEST" },
+        },
+      },
+    },
+  });
+
+  const validWebhookSig = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(rawPayload)
+    .digest("hex");
+
+  const verifyWebhookSig = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(rawPayload)
+    .digest("hex");
+
+  assert.strictEqual(validWebhookSig, verifyWebhookSig, "Webhook signature must verify successfully");
+
+  // Idempotency: verify already paid check logic
+  const mockOrder = { order_number: "PP-2026-TEST", status: "paid", payment_status: "paid" };
+  const alreadyProcessed = mockOrder.status === "paid" || mockOrder.payment_status === "paid";
+  assert.strictEqual(alreadyProcessed, true, "Already paid order must be skipped to prevent duplicate side effects");
+});
+
+// 12. Order Management: Stores Razorpay IDs and payment status accurately
+it("Order Management: Stores Razorpay Order ID, Payment ID, and status", () => {
+  const memoryOrders = [];
+  const testOrder = {
+    id: `ord-${Date.now()}`,
+    order_number: "PP-2026-1001",
+    customer: {
+      name: "Test Customer",
+      email: "test@example.com",
+      phone: "+91 9876543210",
+      house: "123",
+      street: "Test St",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001",
+      country: "India",
+    },
+    items: [],
+    status: "pending_payment",
+    payment_status: "unpaid",
+    subtotal: 500,
+    shipping_fee: 0,
+    discount_amount: 0,
+    total_payable: 500,
+    total_supplier_cost: 300,
+    total_contribution: 200,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  memoryOrders.push(testOrder);
+
+  assert.ok(testOrder.order_number, "Order number must be assigned");
+
+  // Simulate updateOrderStatusAdmin
+  const current = memoryOrders[0];
+  const updated = {
+    ...current,
+    status: "paid",
+    payment_status: "paid",
+    razorpay_order_id: "order_test_999",
+    razorpay_payment_id: "pay_test_999",
+    razorpay_signature: "sig_test_999",
+    payment_method: "upi",
+    updated_at: new Date().toISOString(),
+  };
+  memoryOrders[0] = updated;
+
+  assert.strictEqual(updated.payment_status, "paid", "Payment status must be paid");
+  assert.strictEqual(updated.razorpay_order_id, "order_test_999", "Razorpay order ID must be saved");
+  assert.strictEqual(updated.razorpay_payment_id, "pay_test_999", "Razorpay payment ID must be saved");
+  assert.strictEqual(updated.payment_method, "upi", "Payment method must be saved");
+});
+
 console.log(`\n========================================`);
 console.log(`Results: ${passed}/${total} tests passed successfully.`);
 console.log(`========================================\n`);

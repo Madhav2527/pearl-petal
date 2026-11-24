@@ -1,0 +1,41 @@
+[
+  {
+    "customer": {
+      "name": "madhav",
+      "email": "madhavsharma8506@gmail.com",
+      "phone": "+91 9321058393",
+      "house": "501",
+      "street": "l road",
+      "city": "bengaluru",
+      "state": "Karnataka",
+      "pincode": "421301",
+      "country": "India"
+    },
+    "items": [
+      {
+        "id": "ord-item-1795495339757-d6r2",
+        "product_id": "prod-hair-2401022",
+        "product_name": "Heart Comb",
+        "sku": "PP-HAIR-1022",
+        "unit_selling_price": 340,
+        "unit_supplier_cost": 290,
+        "quantity": 1,
+        "total_price": 340,
+        "total_cost": 290,
+        "image_url": "https://img101.mfrcdn.com/goods-pic/91aed1f747fc456fb5f13de43730f21c_w1440_q90.webp"
+      }
+    ],
+    "status": "paid",
+    "payment_status": "unpaid",
+    "subtotal": 340,
+    "shipping_fee": 99,
+    "discount_amount": 0,
+    "total_payable": 439,
+    "total_supplier_cost": 290,
+    "total_contribution": 48.64,
+    "id": "ord-1795495339757",
+    "order_number": "PP-2026-1001",
+    "created_at": "2026-11-24T04:42:19.757Z",
+    "updated_at": "2026-11-24T04:43:45.772Z"
+  }
+]

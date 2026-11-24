@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { getProductByIdAdmin, createOrder } from "@/lib/store";
+import { getProductByIdAdmin, createOrder, updateOrderStatusAdmin } from "@/lib/store";
 import { calculateShippingFee, DEFAULT_PRICING_SETTINGS, calculateContribution } from "@/lib/pricing-engine";
 import { OrderItem, CustomerAddress } from "@/lib/types";
 
@@ -122,6 +122,13 @@ export async function POST(req: Request) {
             orderNumber: order.order_number,
             customerEmail: customer.email,
           },
+        });
+
+        // Store Razorpay order ID on internal order
+        updateOrderStatusAdmin({
+          orderNumber: order.order_number,
+          status: "pending_payment",
+          razorpayOrderId: rzpOrder.id,
         });
 
         return NextResponse.json({
