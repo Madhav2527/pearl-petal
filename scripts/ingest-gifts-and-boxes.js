@@ -160,20 +160,35 @@ async function main() {
       const images = [];
       if (Array.isArray(g.imageList) && g.imageList.length > 0) {
         for (const imgObj of g.imageList) {
-          const url = imgObj.goodsThumb || imgObj.skcMainImg || imgObj.colorPic;
-          if (url && !images.includes(url)) {
-            // Enhance to w800 if possible
-            const highRes = url.replace(/_w\d+_h\d+_q\d+/, "_w800_h1066_q85").replace(/_w\d+_q\d+/, "_w800_q85");
-            images.push(highRes);
+          const rawUrl = imgObj.goodsThumb || imgObj.skcMainImg || imgObj.colorPic;
+          if (rawUrl) {
+            const hashMatch = rawUrl.match(/goods-pic\/([a-f0-9]{32})/);
+            const highRes = hashMatch
+              ? `https://img101.mfrcdn.com/goods-pic/${hashMatch[1]}_w1440_q90.webp`
+              : rawUrl;
+            if (!images.some((img) => img.image_url === highRes)) {
+              images.push({
+                id: `img-${goodsId}-${images.length + 1}`,
+                image_url: highRes,
+                alt_text: `${cleanName} - View ${images.length + 1}`,
+                display_order: images.length + 1,
+                is_primary: images.length === 0,
+              });
+            }
           }
         }
       }
       if (images.length === 0) {
-        images.push(
-          act.subcategory === "keepsake-boxes"
-            ? "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80"
-            : "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
-        );
+        images.push({
+          id: `img-${goodsId}-1`,
+          image_url:
+            act.subcategory === "keepsake-boxes"
+              ? "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80"
+              : "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80",
+          alt_text: `${cleanName} - View 1`,
+          display_order: 1,
+          is_primary: true,
+        });
       }
 
       // Extract variants

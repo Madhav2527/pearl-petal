@@ -13,18 +13,32 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addItem } = useCart();
-  const primaryImage = product.images.find((img) => img.is_primary) || product.images[0];
-  const secondaryImage = product.images.length > 1 ? product.images[1] : null;
+
+  // Helper to extract image URL safely whether string or object
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getImageUrl = (img: any): string => {
+    if (!img) return "";
+    if (typeof img === "string") return img;
+    return img.image_url || "";
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawPrimary = product.images.find((img: any) => typeof img === "object" && img?.is_primary) || product.images[0];
+  const primaryImageUrl = getImageUrl(rawPrimary);
+  const primaryAltText = (typeof rawPrimary === "object" && rawPrimary?.alt_text) || product.name;
+
+  const rawSecondary = product.images.length > 1 ? product.images[1] : null;
+  const secondaryImageUrl = rawSecondary ? getImageUrl(rawSecondary) : "";
 
   return (
     <div className="group flex flex-col h-full bg-white border border-[#EBE3D8] transition-all duration-300 hover:border-champagne hover:shadow-[0_8px_30px_rgb(216,197,171,0.15)]">
       
       {/* Image Container with hover swap */}
       <Link href={`/product/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden bg-ivory/50">
-        {primaryImage && (
+        {primaryImageUrl && (
           <Image
-            src={primaryImage.image_url}
-            alt={primaryImage.alt_text || product.name}
+            src={primaryImageUrl}
+            alt={primaryAltText}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
@@ -33,18 +47,20 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.srcset = "";
-              target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+              target.src = product.category === "gifts"
+                ? "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
+                : "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
             }}
             className={`object-cover object-center transition-all duration-700 group-hover:scale-105 ${
-              secondaryImage ? "group-hover:opacity-0" : ""
+              secondaryImageUrl ? "group-hover:opacity-0" : ""
             }`}
           />
         )}
 
-        {secondaryImage && (
+        {secondaryImageUrl && (
           <Image
-            src={secondaryImage.image_url}
-            alt={secondaryImage.alt_text || product.name}
+            src={secondaryImageUrl}
+            alt={primaryAltText}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             unoptimized

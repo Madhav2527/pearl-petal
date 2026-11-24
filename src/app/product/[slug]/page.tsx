@@ -64,8 +64,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const images = product.images.length > 0
-    ? product.images
+    ? product.images.map((img: any, idx: number) => ({
+        id: typeof img === "object" && img?.id ? img.id : `img-${idx}`,
+        image_url: typeof img === "object" && img?.image_url ? img.image_url : (typeof img === "string" ? img : ""),
+        alt_text: typeof img === "object" && img?.alt_text ? img.alt_text : `${product.name} - View ${idx + 1}`,
+        display_order: idx + 1,
+        is_primary: idx === 0,
+      }))
     : [{ id: "fallback", image_url: "", alt_text: product.name, display_order: 1 }];
 
   const [relatedProducts, setRelatedProducts] = useState<PublicProduct[]>([]);
@@ -140,7 +147,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.srcset = "";
-                      target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                      target.src = product.category === "gifts"
+                        ? "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
+                        : "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
                     }}
                     className="object-cover object-center"
                   />
@@ -162,7 +171,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.srcset = "";
-                  target.src = "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
+                  target.src = product.category === "gifts"
+                    ? "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
+                    : "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80";
                 }}
                 className="object-cover object-center transition-all duration-500"
               />
