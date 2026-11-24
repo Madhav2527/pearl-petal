@@ -18,13 +18,27 @@ export async function POST(req: Request) {
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
     // If live credentials are provided, strictly verify HMAC SHA-256 signature
-    if (razorpaySecret && razorpayPaymentId && razorpaySignature) {
+    if (razorpaySecret) {
+      if (!razorpayPaymentId || !razorpaySignature) {
+        return NextResponse.json(
+          { error: "Missing required Razorpay payment ID or signature for verification." },
+          { status: 400 }
+        );
+      }
+
       const generatedSignature = crypto
         .createHmac("sha256", razorpaySecret)
         .update(`${razorpayOrderId}|${razorpayPaymentId}`)
         .digest("hex");
 
-      if (generatedSignature !== razorpaySignature) {
+      const isMatch =
+        generatedSignature.length === razorpaySignature.length &&
+        crypto.timingSafeEqual(
+          Buffer.from(generatedSignature, "utf8"),
+          Buffer.from(razorpaySignature, "utf8")
+        );
+
+      if (!isMatch) {
         console.error("Payment signature verification failed!");
         return NextResponse.json(
           { error: "Payment verification failed. Security signature mismatch." },

@@ -187,12 +187,26 @@ export default function CheckoutPage() {
           modal: {
             ondismiss: function () {
               setIsLoading(false);
+              setErrorMessage("Payment was cancelled. You can retry checkout anytime.");
             },
           },
         };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rzp = new (window as any).Razorpay(options);
+        
+        // Handle payment failure event
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rzp.on("payment.failed", function (response: any) {
+          console.error("Razorpay payment failed:", response.error);
+          const reason =
+            response.error?.description ||
+            response.error?.reason ||
+            "Payment transaction failed. Please retry with UPI, NetBanking, or card.";
+          setErrorMessage(`Payment failed: ${reason}`);
+          setIsLoading(false);
+        });
+
         rzp.open();
         return;
       }

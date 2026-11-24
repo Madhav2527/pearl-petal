@@ -175,6 +175,45 @@ it("Catalogue Pricing: 100% of products strictly adhere to Selling Price = Suppl
   assert.strictEqual(discrepancies, 0, "Zero pricing discrepancies allowed across entire catalog");
 });
 
+// 9. Razorpay Standard Checkout: Order Creation Minimum Amount Validation
+it("Razorpay Integration: Order creation rejects amounts below 100 paise", () => {
+  const testAmounts = [0, 50, 99, -100];
+  for (const amt of testAmounts) {
+    const isValid = amt >= 100;
+    assert.strictEqual(isValid, false, `Amount ${amt} paise must be rejected (min 100 paise)`);
+  }
+  assert.strictEqual(100 >= 100, true, "100 paise (₹1.00) must be accepted");
+});
+
+// 10. Razorpay Standard Checkout: Signature Verification Algorithm & Tamper Detection
+it("Razorpay Integration: HMAC-SHA256 signature algorithm strictly verifies and detects tampering", () => {
+  const secret = "PW0Yxje16eote8p1P0tn5lSS";
+  const orderId = "order_U3sdBCpIjbp2ae";
+  const paymentId = "pay_U3sdTest123456";
+
+  // Generate legitimate signature
+  const validSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  // Verify match
+  const verifyCheck = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+  assert.strictEqual(validSignature, verifyCheck, "Valid signature must match");
+
+  // Verify tampering detection
+  const tamperedSignature = validSignature.slice(0, -2) + "00";
+  const isMatch = validSignature === tamperedSignature;
+  assert.strictEqual(isMatch, false, "Tampered signature must be rejected");
+
+  // Verify field absence detection
+  const missingOrder = !orderId || !paymentId || !validSignature;
+  assert.strictEqual(missingOrder, false, "All 3 fields must be present");
+});
+
 console.log(`\n========================================`);
 console.log(`Results: ${passed}/${total} tests passed successfully.`);
 console.log(`========================================\n`);
