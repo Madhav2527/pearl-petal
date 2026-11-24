@@ -177,6 +177,43 @@ export default function CheckoutPage() {
 
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.success) {
+              if (typeof window !== "undefined") {
+                try {
+                  const fallbackOrder = orderData.orderRecord || {
+                    order_number: orderNumber,
+                    customer: {
+                      ...formData,
+                      phone: `+91 ${cleanPhone.slice(-10)}`,
+                      country: "India",
+                    },
+                    items: items.map((i) => ({
+                      id: `item-${Date.now()}-${i.product.id}`,
+                      product_id: i.product.id,
+                      variant_id: i.variant?.id,
+                      product_name: i.product.name,
+                      variant_title: i.variant?.title,
+                      sku: i.variant?.sku || i.product.sku,
+                      unit_selling_price: i.variant?.price_override ?? i.product.selling_price,
+                      quantity: i.quantity,
+                      total_price: (i.variant?.price_override ?? i.product.selling_price) * i.quantity,
+                      image_url: i.product.images[0]?.image_url,
+                    })),
+                    status: "paid",
+                    payment_status: "paid",
+                    subtotal,
+                    shipping_fee: shippingFee,
+                    total_payable: totalPayable,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    created_at: new Date().toISOString(),
+                  };
+                  localStorage.setItem(`pp_order_${orderNumber}`, JSON.stringify(fallbackOrder));
+                  localStorage.setItem("pp_last_order", JSON.stringify(fallbackOrder));
+                  document.cookie = `pp_last_order=${encodeURIComponent(JSON.stringify(fallbackOrder))}; path=/; max-age=86400; SameSite=Lax`;
+                } catch (e) {
+                  console.warn("Could not save to client storage:", e);
+                }
+              }
               clearCart();
               router.push(`/order-confirmation/${orderNumber}`);
             } else {
@@ -227,6 +264,42 @@ export default function CheckoutPage() {
 
       const verifyData = await verifyRes.json();
       if (verifyRes.ok && verifyData.success) {
+        if (typeof window !== "undefined") {
+          try {
+            const fallbackOrder = orderData.orderRecord || {
+              order_number: orderNumber,
+              customer: {
+                ...formData,
+                phone: `+91 ${cleanPhone.slice(-10)}`,
+                country: "India",
+              },
+              items: items.map((i) => ({
+                id: `item-${Date.now()}-${i.product.id}`,
+                product_id: i.product.id,
+                variant_id: i.variant?.id,
+                product_name: i.product.name,
+                variant_title: i.variant?.title,
+                sku: i.variant?.sku || i.product.sku,
+                unit_selling_price: i.variant?.price_override ?? i.product.selling_price,
+                quantity: i.quantity,
+                total_price: (i.variant?.price_override ?? i.product.selling_price) * i.quantity,
+                image_url: i.product.images[0]?.image_url,
+              })),
+              status: "paid",
+              payment_status: "paid",
+              subtotal,
+              shipping_fee: shippingFee,
+              total_payable: totalPayable,
+              razorpay_order_id: razorpayOrderId,
+              razorpay_payment_id: `pay_sim_${Date.now()}`,
+              created_at: new Date().toISOString(),
+            };
+            localStorage.setItem(`pp_order_${orderNumber}`, JSON.stringify(fallbackOrder));
+            localStorage.setItem("pp_last_order", JSON.stringify(fallbackOrder));
+          } catch (e) {
+            console.warn("Could not save to client storage:", e);
+          }
+        }
         setTimeout(() => {
           clearCart();
           router.push(`/order-confirmation/${orderNumber}`);

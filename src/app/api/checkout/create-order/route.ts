@@ -120,7 +120,15 @@ export async function POST(req: Request) {
           receipt: order.order_number,
           notes: {
             orderNumber: order.order_number,
-            customerEmail: customer.email,
+            customerName: customer.name.slice(0, 40),
+            customerEmail: customer.email.slice(0, 40),
+            customerPhone: customer.phone.slice(0, 20),
+            customerCity: customer.city.slice(0, 30),
+            customerState: customer.state.slice(0, 30),
+            customerPincode: customer.pincode.slice(0, 10),
+            customerHouse: customer.house.slice(0, 40),
+            customerStreet: customer.street.slice(0, 40),
+            itemsSummary: verifiedItems.map((i) => `${i.quantity}x ${i.product_name}`).join(", ").slice(0, 240),
           },
         });
 
@@ -138,6 +146,7 @@ export async function POST(req: Request) {
           currency: "INR",
           keyId: razorpayKeyId,
           isLivePayment: true,
+          orderRecord: order,
         });
       } catch (rzpErr) {
         console.error("Razorpay order creation failed, falling back to staging simulation:", rzpErr);

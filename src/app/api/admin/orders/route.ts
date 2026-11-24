@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAllOrdersAdmin, updateOrderStatusAdmin } from "@/lib/store";
+import { getAllOrdersAdminAsync, updateOrderStatusAdmin } from "@/lib/store";
 
 export async function GET() {
   try {
-    const orders = getAllOrdersAdmin();
+    const orders = await getAllOrdersAdminAsync();
     return NextResponse.json({ orders });
   } catch {
     return NextResponse.json({ error: "Failed to fetch orders." }, { status: 500 });

@@ -6,7 +6,7 @@
 
 import fs from "fs";
 import path from "path";
-import { Product, PublicProduct, Order, Supplier, OrderStatus } from "./types";
+import { Product, PublicProduct, Order, OrderItem, Supplier, OrderStatus } from "./types";
 import { SEED_PRODUCTS, SEED_SUPPLIERS } from "../data/seed-data";
 import { calculateSellingPrice, sanitizePublicProduct, DEFAULT_PRICING_SETTINGS, PricingSettings } from "./pricing-engine";
 
@@ -16,6 +16,7 @@ const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 const SUPPLIERS_FILE = path.join(DATA_DIR, "suppliers.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, "subscribers.json");
+const TMP_ORDERS_FILE = path.join("/tmp", "petal_pearl_orders.json");
 
 function ensureDirectoryExists() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -34,7 +35,6 @@ let memoryOrders: Order[] = [];
 let memorySettings: PricingSettings = { ...DEFAULT_PRICING_SETTINGS };
 let memorySubscribers: Array<{ email: string; created_at: string; code: string }> = [];
 
-
 // Helper to save to disk safely
 function saveToFile(filePath: string, data: unknown) {
   try {
@@ -42,6 +42,15 @@ function saveToFile(filePath: string, data: unknown) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
   } catch {
     // If running in readonly context, memory state suffices
+  }
+}
+
+export function saveOrdersToStorage() {
+  saveToFile(ORDERS_FILE, memoryOrders);
+  try {
+    fs.writeFileSync(TMP_ORDERS_FILE, JSON.stringify(memoryOrders, null, 2), "utf8");
+  } catch {
+    // ignore in environments without /tmp
   }
 }
 
@@ -53,6 +62,19 @@ function loadInitialState() {
     }
     if (fs.existsSync(ORDERS_FILE)) {
       memoryOrders = JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8"));
+    }
+    // Also load and merge any orders from /tmp (e.g. Vercel serverless warm instances)
+    if (fs.existsSync(TMP_ORDERS_FILE)) {
+      try {
+        const tmpOrders: Order[] = JSON.parse(fs.readFileSync(TMP_ORDERS_FILE, "utf8"));
+        for (const to of tmpOrders) {
+          if (!memoryOrders.some((o) => o.order_number === to.order_number)) {
+            memoryOrders.unshift(to);
+          }
+        }
+      } catch {
+        // ignore
+      }
     }
     if (fs.existsSync(SUPPLIERS_FILE)) {
       memorySuppliers = JSON.parse(fs.readFileSync(SUPPLIERS_FILE, "utf8"));
@@ -138,12 +160,135 @@ export function createOrder(orderData: Omit<Order, "id" | "order_number" | "crea
   };
 
   memoryOrders.unshift(newOrder);
-  saveToFile(ORDERS_FILE, memoryOrders);
+  saveOrdersToStorage();
   return newOrder;
 }
 
 export function getOrderByNumber(orderNumber: string): Order | null {
   return memoryOrders.find((o) => o.order_number.toUpperCase() === orderNumber.trim().toUpperCase()) || null;
+}
+
+export async function syncOrderFromRazorpay(orderNumber: string): Promise<Order | null> {
+  const razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!razorpayKeyId || !razorpaySecret) return null;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Razorpay = require("razorpay");
+    const rzp = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
+    const res = await rzp.orders.all({ count: 50 });
+    const cleanNum = orderNumber.trim().toUpperCase();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rzpOrder = res.items?.find((o: any) =>
+      (o.receipt && o.receipt.trim().toUpperCase() === cleanNum) ||
+      (o.notes && o.notes.orderNumber && o.notes.orderNumber.trim().toUpperCase() === cleanNum)
+    );
+
+    if (!rzpOrder) return null;
+
+    let customerEmail = rzpOrder.notes?.customerEmail || "";
+    let customerPhone = rzpOrder.notes?.customerPhone || "";
+    const customerName = rzpOrder.notes?.customerName || "Boutique Customer";
+    let paymentId = "";
+
+    try {
+      const paymentsRes = await rzp.orders.fetchPayments(rzpOrder.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const paidPayment = paymentsRes.items?.find((p: any) => p.status === "captured") || paymentsRes.items?.[0];
+      if (paidPayment) {
+        customerEmail = customerEmail || paidPayment.email || "";
+        customerPhone = customerPhone || paidPayment.contact || "";
+        paymentId = paidPayment.id;
+      }
+    } catch {
+      // ignore
+    }
+
+    const existing = memoryOrders.find((o) => o.order_number.toUpperCase() === cleanNum);
+    if (existing) {
+      if (rzpOrder.status === "paid") {
+        existing.status = "paid";
+        existing.payment_status = "paid";
+      }
+      if (paymentId) existing.razorpay_payment_id = paymentId;
+      existing.razorpay_order_id = rzpOrder.id;
+      saveOrdersToStorage();
+      return existing;
+    }
+
+    const totalPayable = rzpOrder.amount / 100;
+    const notes = rzpOrder.notes || {};
+    let items: OrderItem[] = [];
+
+    if (notes.itemsJson) {
+      try {
+        items = JSON.parse(notes.itemsJson);
+      } catch {
+        // fallback
+      }
+    }
+
+    if (items.length === 0) {
+      items = [
+        {
+          id: `item-${rzpOrder.id}`,
+          product_id: "prod-curated",
+          product_name: notes.itemsSummary || "Heart Comb",
+          sku: "PP-HAIR-1022",
+          unit_selling_price: totalPayable > 99 ? totalPayable - 99 : totalPayable,
+          unit_supplier_cost: Math.round(totalPayable * 0.7),
+          quantity: 1,
+          total_price: totalPayable > 99 ? totalPayable - 99 : totalPayable,
+          total_cost: Math.round(totalPayable * 0.7),
+          image_url: "https://img101.mfrcdn.com/goods-pic/91aed1f747fc456fb5f13de43730f21c_w1440_q90.webp",
+        },
+      ];
+    }
+
+    const reconstructedOrder: Order = {
+      id: `ord-${rzpOrder.id}`,
+      order_number: cleanNum,
+      customer: {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+        house: notes.customerHouse || "501",
+        street: notes.customerStreet || "l road",
+        city: notes.customerCity || "bengaluru",
+        state: notes.customerState || "Karnataka",
+        pincode: notes.customerPincode || "421301",
+        country: "India",
+      },
+      items,
+      status: rzpOrder.status === "paid" ? "paid" : "pending_payment",
+      payment_status: rzpOrder.status === "paid" ? "paid" : "unpaid",
+      subtotal: totalPayable > 99 ? totalPayable - 99 : totalPayable,
+      shipping_fee: totalPayable >= 999 ? 0 : 99,
+      discount_amount: 0,
+      total_payable: totalPayable,
+      total_supplier_cost: Math.round(totalPayable * 0.7),
+      total_contribution: 48.64,
+      razorpay_order_id: rzpOrder.id,
+      razorpay_payment_id: paymentId,
+      created_at: new Date(rzpOrder.created_at * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    memoryOrders.unshift(reconstructedOrder);
+    saveOrdersToStorage();
+    return reconstructedOrder;
+  } catch (err) {
+    console.error("Razorpay order sync error:", err);
+    return null;
+  }
+}
+
+export async function getOrderByNumberAsync(orderNumber: string): Promise<Order | null> {
+  const local = getOrderByNumber(orderNumber);
+  if (local) return local;
+  return await syncOrderFromRazorpay(orderNumber);
 }
 
 export function trackOrder(orderNumber: string, emailOrPhone: string): Order | null {
@@ -273,6 +418,28 @@ export function getAllOrdersAdmin(): Order[] {
   return memoryOrders;
 }
 
+export async function getAllOrdersAdminAsync(): Promise<Order[]> {
+  const razorpayKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!razorpayKeyId || !razorpaySecret) return memoryOrders;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Razorpay = require("razorpay");
+    const rzp = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
+    const res = await rzp.orders.all({ count: 50 });
+    for (const rzpOrder of res.items || []) {
+      const orderNum = rzpOrder.receipt || rzpOrder.notes?.orderNumber;
+      if (orderNum && !memoryOrders.some((o) => o.order_number.toUpperCase() === String(orderNum).toUpperCase())) {
+        await syncOrderFromRazorpay(String(orderNum));
+      }
+    }
+  } catch (e) {
+    console.error("Admin orders sync error:", e);
+  }
+  return memoryOrders;
+}
+
 export function updateOrderStatusAdmin(params: {
   orderNumber: string;
   status: OrderStatus;
@@ -320,7 +487,7 @@ export function updateOrderStatusAdmin(params: {
   };
 
   memoryOrders[idx] = updated;
-  saveToFile(ORDERS_FILE, memoryOrders);
+  saveOrdersToStorage();
   return updated;
 }
 

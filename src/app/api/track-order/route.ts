@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { trackOrder, getOrderByNumber } from "@/lib/store";
+import { trackOrder, getOrderByNumberAsync } from "@/lib/store";
 
 export async function GET(req: Request) {
   try {
@@ -11,9 +11,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing orderNumber" }, { status: 400 });
     }
 
-    const order = contact
+    let order = contact
       ? trackOrder(orderNumber, contact)
-      : getOrderByNumber(orderNumber);
+      : null;
+
+    if (!order) {
+      order = await getOrderByNumberAsync(orderNumber);
+    }
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
